@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.Weather</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Clima</name>
+        <description>Efeitos visuais de clima sobre o Scene (chuva, tempestade, neve, névoa, vendaval...) com opacidade configurável e sem bloquear cliques.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

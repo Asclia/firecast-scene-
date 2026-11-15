@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSSpellFX" width="300" height="270" drawContainer="true" resizable="false"
+           placement="topLeft" cancelable="false">
+
+	<style>
+		label.cap {
+			width: 84;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+			fontSize: 12;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+
+		function self:readConfig()
+			return {
+				fx = self.cmbFX.value or "",
+				count = self.edtCount.text or "",
+				size = self.edtSize.text or ""
+			};
+		end;
+
+		function self:notify()
+			if loading then
+				return;
+			end;
+
+			if options.onChange ~= nil then
+				local hint, countEnabled, defSize = options.onChange(self:readConfig());
+				self.labHint.text = hint or "";
+				self.edtCount.enabled = countEnabled == true;
+			end;
+		end;
+
+		function self:fxChanged()
+			if loading then
+				return;
+			end;
+
+			-- ao trocar de efeito, volta o tamanho para o padrão dele
+			if options.defaultSize ~= nil then
+				loading = true;
+				self.edtSize.text = options.defaultSize(self.cmbFX.value) or "";
+				loading = false;
+			end;
+
+			self:notify();
+		end;
+
+		-- info = {items, values, onChange(cfg) -> hint, countEnabled, defaultSize(id), onClose()}
+		function self:prepareFor(info)
+			options = info or {};
+			loading = true;
+			self.cmbFX.items = options.items or {};
+			self.cmbFX.values = options.values or {};
+
+			if self.cmbFX.value == nil or self.cmbFX.value == "" then
+				self.cmbFX.value = (options.values or {})[1];
+			end;
+
+			if options.defaultSize ~= nil then
+				self.edtSize.text = options.defaultSize(self.cmbFX.value) or "";
+			end;
+
+			loading = false;
+			self:notify();
+		end;
+
+		function self:doClose()
+			if options.onClose ~= nil then
+				options.onClose();
+			end;
+		end;
+	]]></script>
+
+	<layout align="client" margins="{left=8, right=8, top=6, bottom=6}">
+		<label left="0" top="0" width="284" height="22" fontSize="15" fontStyle="bold" text="Animação de magia"/>
+
+		<label class="cap" left="0" top="28" text="Efeito:"/>
+		<comboBox name="cmbFX" left="88" top="28" width="196" height="26" onChange="self:fxChanged()"/>
+
+		<label class="cap" left="0" top="60" text="Quantidade:"/>
+		<edit name="edtCount" left="88" top="60" width="60" height="26" text="3" type="number" min="1" max="10"
+		      onChange="self:notify()"/>
+		<label left="152" top="60" width="132" height="26" fontSize="10" fontColor="#B0BEC5"
+		       text="mísseis / raios" vertTextAlign="center"/>
+
+		<label class="cap" left="0" top="92" text="Tamanho:"/>
+		<edit name="edtSize" left="88" top="92" width="90" height="26" onChange="self:notify()"/>
+		<label left="182" top="92" width="102" height="26" fontSize="10" fontColor="#B0BEC5"
+		       text="raio/compr. (ft, m)" vertTextAlign="center"/>
+
+		<label name="labHint" left="0" top="124" width="284" height="96" fontSize="11" fontColor="#FFCC66"
+		       wordWrap="true" horzTextAlign="center"/>
+
+		<button left="184" top="226" width="100" height="26" text="Fechar" onClick="self:doClose()"/>
+	</layout>
+</popupForm>

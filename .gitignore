@@ -1,0 +1,5 @@
+plugins/*/sdk/
+plugins/*/output/
+dist/
+__pycache__/
+*.pyc

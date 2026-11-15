@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.Conditions</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Condições</name>
+        <description>Ícones de condições e status (Pathfinder 1e, FFd20 e personalizados) sobre os tokens do Scene, com duração em rodadas e avanço de rodada.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

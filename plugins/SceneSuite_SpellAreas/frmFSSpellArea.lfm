@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSSpellArea" width="300" height="430" drawContainer="true" resizable="false"
+           placement="topLeft" cancelable="false">
+
+	<style>
+		label.cap {
+			width: 84;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+			fontSize: 12;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+
+		function self:readConfig()
+			return {
+				preset = self.cmbPreset.value or "",
+				shape = self.cmbShape.value or "burst",
+				size = self.edtSize.text or "",
+				width = self.edtWidth.text or "",
+				name = self.edtName.text or "",
+				color = self.cmbColor.color or "#FF6D00",
+				fill = self.cmbFill.value or "0.3",
+				mode = self.cmbMode.value or "grid",
+				diag = self.cmbDiag.value or "pf",
+				gm = self.cbxGM.checked,
+				fx = self.cbxFX.checked
+			};
+		end;
+
+		function self:notify()
+			if loading then
+				return;
+			end;
+
+			local shape = self.cmbShape.value;
+			self.edtWidth.enabled = (shape == "line");
+
+			if options.onChange ~= nil then
+				local cfg = self:readConfig();
+				self.labHint.text = options.onChange(cfg) or "";
+			end;
+		end;
+
+		function self:applyPreset()
+			if loading then
+				return;
+			end;
+
+			local p = options.presets and options.presets[tonumber(self.cmbPreset.value) or 0];
+
+			if p ~= nil then
+				loading = true;
+				self.cmbShape.value = p.shape;
+				self.edtSize.text = p.size;
+				self.edtWidth.text = p.width or "5 ft";
+				self.edtName.text = p.name;
+				self.cmbColor.color = p.color;
+				self.cbxFX.checked = p.fx ~= nil;
+				self.cbxFX.enabled = p.fx ~= nil;
+				loading = false;
+			else
+				self.cbxFX.enabled = true;
+			end;
+
+			self:notify();
+		end;
+
+		-- info = {presets = {...}, onChange(cfg) -> hint, onClose()}
+		function self:prepareFor(info)
+			options = info or {};
+			loading = true;
+			local items, values = {"Personalizada"}, {"0"};
+
+			for i, p in ipairs(options.presets or {}) do
+				items[#items + 1] = p.label;
+				values[#values + 1] = tostring(i);
+			end;
+
+			self.cmbPreset.items = items;
+			self.cmbPreset.values = values;
+
+			if self.cmbPreset.value == nil or self.cmbPreset.value == "" then
+				self.cmbPreset.value = "1";
+			end;
+
+			loading = false;
+			self:applyPreset();
+		end;
+
+		function self:doClose()
+			if options.onClose ~= nil then
+				options.onClose();
+			end;
+		end;
+	]]></script>
+
+	<layout align="client" margins="{left=8, right=8, top=6, bottom=6}">
+		<label left="0" top="0" width="284" height="22" fontSize="15" fontStyle="bold" text="Área de magia"/>
+
+		<label class="cap" left="0" top="28" text="Magia:"/>
+		<comboBox name="cmbPreset" left="88" top="28" width="196" height="26" onChange="self:applyPreset()"/>
+
+		<label class="cap" left="0" top="60" text="Forma:"/>
+		<comboBox name="cmbShape" left="88" top="60" width="196" height="26"
+		          items="{'Explosão / dispersão (raio)', 'Emanação (raio)', 'Cilindro (raio)', 'Cone', 'Linha', 'Quadrado / cubo'}"
+		          values="{'burst', 'emanation', 'cylinder', 'cone', 'line', 'square'}" value="burst"
+		          onChange="self:notify()"/>
+
+		<label class="cap" left="0" top="92" text="Tamanho:"/>
+		<edit name="edtSize" left="88" top="92" width="90" height="26" text="20 ft" onChange="self:notify()"/>
+		<label left="182" top="92" width="102" height="26" fontSize="10" fontColor="#B0BEC5"
+		       text="20 ft, 6 m, 4 q" vertTextAlign="center"/>
+
+		<label class="cap" left="0" top="124" text="Largura:"/>
+		<edit name="edtWidth" left="88" top="124" width="90" height="26" text="5 ft" onChange="self:notify()"/>
+
+		<label class="cap" left="0" top="156" text="Rótulo:"/>
+		<edit name="edtName" left="88" top="156" width="196" height="26" onChange="self:notify()"/>
+
+		<label class="cap" left="0" top="188" text="Cor:"/>
+		<colorComboBox name="cmbColor" left="88" top="188" width="56" height="26" useAlpha="false" color="#FF6D00"
+		               onChange="self:notify()"/>
+		<comboBox name="cmbFill" left="150" top="188" width="134" height="26"
+		          items="{'Leve (15%)', 'Médio (30%)', 'Forte (45%)'}" values="{'0.15', '0.3', '0.45'}" value="0.3"
+		          onChange="self:notify()"/>
+
+		<label class="cap" left="0" top="220" text="Cálculo:"/>
+		<comboBox name="cmbMode" left="88" top="220" width="196" height="26"
+		          items="{'Quadrados do grid', 'Forma suave'}" values="{'grid', 'smooth'}" value="grid"
+		          onChange="self:notify()"/>
+
+		<label class="cap" left="0" top="252" text="Diagonais:"/>
+		<comboBox name="cmbDiag" left="88" top="252" width="196" height="26"
+		          items="{'Pathfinder (5-10-5)', 'Regra do tabuleiro'}" values="{'pf', 'board'}" value="pf"
+		          onChange="self:notify()"/>
+
+		<checkBox name="cbxGM" left="88" top="282" width="196" height="24" fontSize="12" text="Só o mestre vê"/>
+		<checkBox name="cbxFX" left="88" top="306" width="196" height="24" fontSize="12" text="Tocar animação (plugin Animações)"/>
+
+		<label name="labHint" left="0" top="334" width="284" height="56" fontSize="11" fontColor="#FFCC66"
+		       wordWrap="true" horzTextAlign="center"/>
+
+		<button left="184" top="392" width="100" height="26" text="Fechar" onClick="self:doClose()"/>
+	</layout>
+</popupForm>

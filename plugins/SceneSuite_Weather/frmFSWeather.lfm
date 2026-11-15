@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSWeather" width="330" height="270" drawContainer="true" resizable="false"
+           placement="center" cancelable="true">
+
+	<style>
+		label.cap {
+			width: 90;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+
+		function self:closeMe()
+			if options.close ~= nil then
+				options.close();
+			else
+				self:close();
+			end;
+		end;
+
+		function self:prepareFor(info)
+			options = info or {};
+			local c = options.config or {};
+			self.cmbEffect.value = c.fx or "rain";
+			self.cmbIntensity.value = c.intensity or "2";
+			self.cmbWind.value = c.wind or "0.25";
+			self.cmbOpacity.value = c.opacity or "0.8";
+		end;
+
+		function self:readConfig()
+			return {
+				fx = self.cmbEffect.value or "rain",
+				intensity = self.cmbIntensity.value or "2",
+				wind = self.cmbWind.value or "0",
+				opacity = self.cmbOpacity.value or "0.8"
+			};
+		end;
+
+		function self:doApply()
+			if options.onApply ~= nil then
+				options.onApply(self:readConfig());
+			end;
+		end;
+
+		function self:doOff()
+			if options.onApply ~= nil then
+				local c = self:readConfig();
+				c.fx = "none";
+				options.onApply(c);
+			end;
+		end;
+	]]></script>
+
+	<layout align="client" margins="{left=10, right=10, top=8, bottom=8}">
+		<label left="0" top="0" width="310" height="24" fontSize="16" fontStyle="bold" text="Clima do tabuleiro"/>
+
+		<label class="cap" left="0" top="34" text="Efeito:"/>
+		<comboBox name="cmbEffect" left="96" top="34" width="214" height="26"
+		          items="{'Chuva', 'Tempestade (com raios)', 'Neve', 'Nevasca', 'Névoa', 'Vendaval', 'Tempestade de areia', 'Cinzas e brasas', 'Folhas caindo', 'Noite / escuridão', 'Submerso', 'Vaga-lumes'}"
+		          values="{'rain', 'storm', 'snow', 'blizzard', 'fog', 'wind', 'sand', 'embers', 'leaves', 'night', 'underwater', 'fireflies'}"
+		          value="rain"/>
+
+		<label class="cap" left="0" top="66" text="Intensidade:"/>
+		<comboBox name="cmbIntensity" left="96" top="66" width="214" height="26"
+		          items="{'Leve', 'Moderada', 'Forte'}" values="{'1', '2', '3'}" value="2"/>
+
+		<label class="cap" left="0" top="98" text="Vento:"/>
+		<comboBox name="cmbWind" left="96" top="98" width="214" height="26"
+		          items="{'Sem vento', 'Fraco para a direita', 'Forte para a direita', 'Fraco para a esquerda', 'Forte para a esquerda'}"
+		          values="{'0', '0.25', '0.7', '-0.25', '-0.7'}" value="0.25"/>
+
+		<label class="cap" left="0" top="130" text="Opacidade:"/>
+		<comboBox name="cmbOpacity" left="96" top="130" width="214" height="26"
+		          items="{'20%', '40%', '60%', '80%', '100%'}" values="{'0.2', '0.4', '0.6', '0.8', '1'}" value="0.8"/>
+
+		<label left="0" top="162" width="310" height="34" fontSize="11" fontColor="#B0BEC5" wordWrap="true"
+		       text="O efeito aparece para todos que têm o plugin e não bloqueia cliques. Cada jogador pode desligá-lo só para si."/>
+
+		<button left="0" top="210" width="96" height="30" text="Desligar" onClick="self:doOff()"/>
+		<button left="106" top="210" width="96" height="30" text="Fechar" onClick="self:closeMe()"/>
+		<button left="214" top="210" width="96" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
+	</layout>
+</popupForm>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.Reach</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Alcance</name>
+        <description>Mostra o alcance corpo a corpo (reach) das criaturas por tamanho e armas de haste, de forma discreta.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

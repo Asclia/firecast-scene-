@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSAura" width="430" height="470" drawContainer="true" resizable="false"
+           placement="center" cancelable="true">
+
+	<style>
+		label.cap {
+			width: 130;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+
+		function self:closeMe()
+			if options.close ~= nil then
+				options.close();
+			else
+				self:close();
+			end;
+		end;
+
+		-- Preenche os campos com um registro de aura (tabela plana de textos)
+		function self:loadRecord(r)
+			loading = true;
+			r = r or {};
+			self.cbxOn.checked = r.on ~= "0";
+			self.edtName.text = r.name or "";
+			self.cmbShape.value = r.shape or "emanation";
+			self.edtRadius.text = r.radius or "10 ft";
+			self.edtWidth.text = r.width or "5 ft";
+			self.cmbDir.value = r.dir or "0";
+			self.cbxFollow.checked = r.follow == "1";
+			self.cmbColor.color = r.color or "#7E57C2";
+			self.cmbFill.value = r.fill or "0.15";
+			self.cmbMode.value = r.mode or "grid";
+			self.cmbDiag.value = r.diag or "pf";
+			self.cmbShow.value = r.show or "always";
+			self.cbxGM.checked = r.gm == "1";
+			loading = false;
+			self:updateHint();
+		end;
+
+		function self:readRecord()
+			return {
+				on = self.cbxOn.checked and "1" or "0",
+				name = self.edtName.text or "",
+				shape = self.cmbShape.value or "emanation",
+				radius = self.edtRadius.text or "",
+				width = self.edtWidth.text or "",
+				dir = self.cmbDir.value or "0",
+				follow = self.cbxFollow.checked and "1" or "0",
+				color = self.cmbColor.color or "#7E57C2",
+				fill = self.cmbFill.value or "0.15",
+				mode = self.cmbMode.value or "grid",
+				diag = self.cmbDiag.value or "pf",
+				show = self.cmbShow.value or "always",
+				gm = self.cbxGM.checked and "1" or "0"
+			};
+		end;
+
+		function self:updateHint()
+			if loading then
+				return;
+			end;
+
+			local shape = self.cmbShape.value;
+			local isDir = (shape == "cone" or shape == "line");
+			self.cmbDir.enabled = isDir;
+			self.cbxFollow.enabled = isDir;
+			self.edtWidth.enabled = (shape == "line");
+
+			if options.describe ~= nil then
+				self.labHint.text = options.describe(self:readRecord());
+			end;
+		end;
+
+		function self:changeSlot()
+			if loading then
+				return;
+			end;
+
+			if options.getSlot ~= nil then
+				self:loadRecord(options.getSlot(tonumber(self.cmbSlot.value) or 1));
+			end;
+		end;
+
+		-- info = {title, getSlot(i) -> record, describe(record) -> string,
+		--         onApply(slot, record), onRemove(slot), close()}
+		function self:prepareFor(info)
+			options = info or {};
+			loading = true;
+			self.labTitle.text = options.title or "Aura";
+			self.cmbSlot.value = "1";
+			loading = false;
+			self:changeSlot();
+		end;
+
+		function self:doApply()
+			if options.onApply ~= nil then
+				options.onApply(tonumber(self.cmbSlot.value) or 1, self:readRecord());
+			end;
+		end;
+
+		function self:doRemove()
+			if options.onRemove ~= nil then
+				options.onRemove(tonumber(self.cmbSlot.value) or 1);
+			end;
+
+			self:changeSlot();
+		end;
+	]]></script>
+
+	<layout align="client" margins="{left=10, right=10, top=8, bottom=8}">
+		<label name="labTitle" left="0" top="0" width="410" height="24" fontSize="16" fontStyle="bold" wordWrap="false"/>
+
+		<label class="cap" left="0" top="32" text="Aura:"/>
+		<comboBox name="cmbSlot" left="136" top="32" width="110" height="26"
+		          items="{'Aura 1', 'Aura 2', 'Aura 3'}" values="{'1', '2', '3'}" value="1"
+		          onChange="self:changeSlot()"/>
+		<checkBox name="cbxOn" left="256" top="32" width="150" height="26" text="Ativa" checked="true"/>
+
+		<label class="cap" left="0" top="64" text="Nome (opcional):"/>
+		<edit name="edtName" left="136" top="64" width="270" height="26" textPrompt="Ex.: Aura de Coragem"/>
+
+		<label class="cap" left="0" top="96" text="Forma:"/>
+		<comboBox name="cmbShape" left="136" top="96" width="270" height="26"
+		          items="{'Emanação (círculo ao redor)', 'Quadrado ao redor', 'Cone (90°)', 'Linha'}"
+		          values="{'emanation', 'square', 'cone', 'line'}" value="emanation"
+		          onChange="self:updateHint()"/>
+
+		<label class="cap" left="0" top="128" text="Alcance:"/>
+		<edit name="edtRadius" left="136" top="128" width="100" height="26" text="10 ft" onChange="self:updateHint()"/>
+		<label left="242" top="128" width="164" height="26" fontSize="11" fontColor="#B0BEC5"
+		       text="ex.: 10 ft, 3 m, 2 q" vertTextAlign="center"/>
+
+		<label class="cap" left="0" top="160" text="Largura (linha):"/>
+		<edit name="edtWidth" left="136" top="160" width="100" height="26" text="5 ft" onChange="self:updateHint()"/>
+
+		<label class="cap" left="0" top="192" text="Direção:"/>
+		<comboBox name="cmbDir" left="136" top="192" width="100" height="26"
+		          items="{'Norte ↑', 'Nordeste ↗', 'Leste →', 'Sudeste ↘', 'Sul ↓', 'Sudoeste ↙', 'Oeste ←', 'Noroeste ↖'}"
+		          values="{'0', '45', '90', '135', '180', '225', '270', '315'}" value="0"
+		          onChange="self:updateHint()"/>
+		<checkBox name="cbxFollow" left="244" top="192" width="170" height="26" text="Seguir rotação do token"/>
+
+		<label class="cap" left="0" top="224" text="Cor / preenchimento:"/>
+		<colorComboBox name="cmbColor" left="136" top="224" width="60" height="26" useAlpha="false" color="#7E57C2"/>
+		<comboBox name="cmbFill" left="204" top="224" width="202" height="26"
+		          items="{'Só contorno', 'Muito leve (8%)', 'Leve (15%)', 'Médio (25%)', 'Forte (40%)'}"
+		          values="{'0', '0.08', '0.15', '0.25', '0.4'}" value="0.15"/>
+
+		<label class="cap" left="0" top="256" text="Cálculo:"/>
+		<comboBox name="cmbMode" left="136" top="256" width="270" height="26"
+		          items="{'Quadrados do grid (afetados de fato)', 'Forma geométrica suave'}"
+		          values="{'grid', 'smooth'}" value="grid" onChange="self:updateHint()"/>
+
+		<label class="cap" left="0" top="288" text="Diagonais:"/>
+		<comboBox name="cmbDiag" left="136" top="288" width="270" height="26"
+		          items="{'Pathfinder (5-10-5)', 'Mesma regra do tabuleiro'}"
+		          values="{'pf', 'board'}" value="pf" onChange="self:updateHint()"/>
+
+		<label class="cap" left="0" top="320" text="Exibir:"/>
+		<comboBox name="cmbShow" left="136" top="320" width="270" height="26"
+		          items="{'Sempre', 'Ao passar o mouse / selecionar'}"
+		          values="{'always', 'hover'}" value="always"/>
+
+		<checkBox name="cbxGM" left="136" top="352" width="270" height="26" text="Visível só para o mestre"/>
+
+		<label name="labHint" left="0" top="382" width="410" height="34" fontSize="12" fontColor="#FFCC66"
+		       wordWrap="true" horzTextAlign="center"/>
+
+		<button left="0" top="424" width="130" height="30" text="Remover esta aura" onClick="self:doRemove()"/>
+		<button left="176" top="424" width="110" height="30" text="Fechar" onClick="self:closeMe()"/>
+		<button left="296" top="424" width="110" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
+	</layout>
+</popupForm>

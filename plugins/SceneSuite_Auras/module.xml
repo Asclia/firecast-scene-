@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.Auras</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Auras</name>
+        <description>Auras em círculo, cone, linha ou quadrado ao redor de tokens, medidas em ft/m pela regra de diagonais do Pathfinder (5-10-5).</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

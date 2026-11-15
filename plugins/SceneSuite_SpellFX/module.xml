@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.SpellFX</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Animações de Magia</name>
+        <description>Animações de magias para o Scene: bola de fogo, relâmpago, mísseis mágicos, raios, curas, explosões de luz e mais.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>
