@@ -36,8 +36,8 @@ FSCOND.setList(scene, guerreiro, {{id="haste", r="10", h="0"}, {id="bless", r=""
 
 -- alcance: ogro (grande, alto) e guerreiro com arma de haste
 scene.userData.fsReachView = "always"
-FSREACH.setRecord(scene, ogro, {preset="tall", weapon="0", diag10="1", autoColor="1", diag="pf"})
-FSREACH.setRecord(scene, guerreiro, {preset="tall", weapon="1", adjacent="0", diag10="1", autoColor="1", diag="pf"})
+FSREACH.setRecord(scene, ogro, {natural="10 ft", weapon="0", diag10="1", color="#E53935", diag="pf"})
+FSREACH.setRecord(scene, guerreiro, {natural="5 ft", weapon="1", adjacent="0", diag10="1", color="#1E88E5", diag="pf"})
 
 -- auras: paladino (aura de coragem 10 ft), dragão (cone 30 ft suave seguindo direção)
 local function aura(t, slot, r)

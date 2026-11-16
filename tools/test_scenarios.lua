@@ -24,8 +24,8 @@ end
 
 local function count(canvas, prefix)
 	local n = 0
-	for i = 0, canvas.opCount - 1 do
-		local op = canvas:getOp(i)
+	-- conta direto na lista interna do mock (verdade, independe do índice)
+	for _, op in ipairs(canvas._ops) do
 		if FSC.startsWith(op.name, prefix) then n = n + 1 end
 	end
 	return n
@@ -145,6 +145,10 @@ do
 	opened.edtRadius.text = "abc"; opened:doApply()
 	opened:doRemove()
 	assert(count(medium.canvas, "fsaura3_") == 0, "remover slot 3")
+	medium.selected = true
+	tool("Auras: remover").cb()
+	assert(count(medium.canvas, "fsaura") == 0, "remoção completa das auras")
+	medium.selected = false
 	-- redimensionar o token dispara redesenho (mestre)
 	medium.width = 3.0; medium.height = 3.0
 	medium:fire("onBoundsChange", medium)
@@ -168,17 +172,22 @@ do
 	FSREACH.openFor(scene, {large})
 	GUI.newForm = oldNew
 	assert(opened._name == "frmFSReach")
-	opened.cmbPreset.value = "tall"; opened.cbxWeapon.checked = true; opened:updateHint()
-	assert(opened.labHint.text:find("20 ft"), "grande + haste = 20 ft: " .. opened.labHint.text)
+	opened.edtNatural.text = "10 ft"; opened.cbxWeapon.checked = true; opened.cmbColor.color = "#8E24AA"; opened:updateHint()
+	assert(opened.labHint.text:find("20 ft"), "10 ft + haste = 20 ft: " .. opened.labHint.text)
 	opened:doApply()
 	assert(count(large.canvas, "fsreach_") >= 2, "reach ops")
 	FSREACH.openFor(scene, {medium})
-	opened.cmbPreset.value = "manual"; opened.edtNatural.text = "3 m"; opened.cbxWeapon.checked = false; opened:doApply()
+	opened.edtNatural.text = "3 m"; opened.cbxWeapon.checked = false; opened:doApply()
 	assert(count(medium.canvas, "fsreach_") >= 2)
-	tiny.selected = true
-	tool("Alcance: automático").cb()
-	assert(count(tiny.canvas, "fsreach_") == 0, "miúdo não tem alcance")
-	tiny.selected = false
+	-- remover precisa limpar tudo com um clique
+	FSREACH.openFor(scene, {medium})
+	opened:doRemove()
+	assert(count(medium.canvas, "fsreach_") == 0, "remoção completa do alcance")
+	FSREACH.openFor(scene, {medium})
+	opened.edtNatural.text = "0 ft"; opened:doApply()
+	assert(count(medium.canvas, "fsreach_") == 0, "0 ft não desenha")
+	FSREACH.openFor(scene, {medium})
+	opened.edtNatural.text = "5 ft"; opened:doApply()
 	for _, v in ipairs({"always", "hidden", "hover"}) do
 		scene.userData.fsReachView = v
 		FSREACH.rerenderAll(scene)

@@ -707,28 +707,6 @@ function FSC.withAlpha(color, a)
 	return "#" .. hex .. string.format("%02X", floor(a * 255 + 0.5));
 end;
 
--- Cores padrão por "lado" do token
-FSC.FOF_COLORS = {
-	foe = "#E53935",
-	friend = "#1E88E5",
-	neutral = "#FDD835",
-	unknown = "#B0BEC5"
-};
-
-function FSC.colorForToken(token)
-	local fof = "unknown";
-
-	if token ~= nil then
-		local ok, v = pcall(function() return token.friendOrFoe; end);
-
-		if ok and v ~= nil then
-			fof = v;
-		end;
-	end;
-
-	return FSC.FOF_COLORS[fof] or FSC.FOF_COLORS.unknown;
-end;
-
 ----------------------------------------------------------------------
 -- Canvas / Scene
 ----------------------------------------------------------------------
@@ -743,13 +721,48 @@ function FSC.removeOps(canvas, prefix)
 		return;
 	end;
 
-	for i = canvas.opCount - 1, 0, -1 do
-		local op = canvas:getOp(i);
+	-- Primeiro coleta, depois apaga: apagar enquanto percorre os índices pode
+	-- pular operações (a lista do canvas muda durante a remoção). Repete
+	-- algumas vezes por segurança, até não sobrar nenhuma com o prefixo.
+	for pass = 1, 4 do
+		local doomed = FSC.findOps(canvas, prefix);
 
-		if op ~= nil and FSC.startsWith(op.name, prefix) then
-			op:delete();
+		if #doomed == 0 then
+			return;
+		end;
+
+		for _, op in ipairs(doomed) do
+			if op.isObjectAlive ~= false then
+				pcall(op.delete, op);
+			end;
 		end;
 	end;
+end;
+
+-- Lista as operações cujo nome começa com prefix. Varre 0..opCount
+-- (inclusive) e ignora repetidas, para não depender de o índice ser 0- ou
+-- 1-based.
+function FSC.findOps(canvas, prefix)
+	local found, seen = {}, {};
+
+	if canvas == nil then
+		return found;
+	end;
+
+	for i = 0, canvas.opCount do
+		local ok, op = pcall(canvas.getOp, canvas, i);
+
+		if ok and op ~= nil then
+			local id = op.objectID or op;
+
+			if not seen[id] and FSC.startsWith(op.name, prefix) then
+				seen[id] = true;
+				found[#found + 1] = op;
+			end;
+		end;
+	end;
+
+	return found;
 end;
 
 function FSC.hasOps(canvas, prefix)
@@ -757,15 +770,7 @@ function FSC.hasOps(canvas, prefix)
 		return false;
 	end;
 
-	for i = canvas.opCount - 1, 0, -1 do
-		local op = canvas:getOp(i);
-
-		if op ~= nil and FSC.startsWith(op.name, prefix) then
-			return true;
-		end;
-	end;
-
-	return false;
+	return #FSC.findOps(canvas, prefix) > 0;
 end;
 
 local function applyCommonOpProps(op, o)
@@ -945,17 +950,18 @@ function FSC.tokenAt(scene, screenX, screenY)
 	return nil, wx, wy;
 end;
 
--- Escreve uma mensagem local no chat da mesa (só para quem executou)
-function FSC.chatLocal(scene, text)
-	local ok = pcall(function()
-		local mesa = Firecast.getMesaDe(scene);
-
-		if mesa ~= nil and mesa.chat ~= nil then
-			mesa.chat:escrever(text);
+-- Registra um erro no console do Firecast (/console no chat), sem poluir o chat
+function FSC.logError(tag, msg)
+	pcall(function()
+		if Log ~= nil and Log.e ~= nil then
+			Log.e(tag, tostring(msg));
 		end;
 	end);
+end;
 
-	return ok;
+-- Cria a categoria de ferramentas própria de cada plugin
+function FSC.setupCategory(viewport, name, title, order)
+	viewport:setupToolCategory(name, title, order);
 end;
 
 function FSC.isSpectator(scene)

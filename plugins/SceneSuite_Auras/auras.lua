@@ -11,6 +11,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("gui.lua");
 require("dialogs.lua");
@@ -19,7 +20,7 @@ require("fsCommon.lua");
 local FSC = FSC;
 local UD_FIELD = "fsAuras";
 local SIG_FIELD = "fsAurasSig";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_Auras";
 local MAX_SLOTS = 3;
 
 FSAURA = FSAURA or {};
@@ -233,7 +234,7 @@ function FSAURA.openFor(scene, tokens)
 					local errs = FSAURA.renderToken(scene, t, slots);
 
 					if #errs > 0 then
-						FSC.chatLocal(scene, "[Auras] " .. table.concat(errs, "; "));
+						FSC.logError("SceneSuite.Auras", table.concat(errs, "; "));
 					end;
 				end;
 			end;
@@ -262,10 +263,10 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local viewport = scene.viewport;
 	local lstMouseDown = nil;
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Auras", 51);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Auras: clique em um token (ou use os selecionados)",
-		"/images/tool_aura.png", 20, {selectable = true},
+		"/images/tool_aura.png", 20, {selectable = true, defaultOfCategory = true},
 		function()
 			local sel = FSC.selectedTokens(scene);
 
@@ -315,7 +316,6 @@ SceneLib.registerPlugin(function(scene, attachment)
 				end;
 			end;
 
-			FSC.chatLocal(scene, "[Auras] " .. n .. " token(s) redesenhado(s).");
 		end);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Auras: remover dos selecionados",

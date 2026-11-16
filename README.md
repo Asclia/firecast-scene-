@@ -9,7 +9,7 @@ depende dos outros.
 |---|---|---|
 | `SceneSuite_Conditions` — **Condições** | Ícones de condição sobre o token, com duração em rodadas, avanço de rodada e lista de PF1e, magias comuns e status do FFd20 | Só quem aplica (o desenho fica salvo no token) |
 | `SceneSuite_Auras` — **Auras** | Até 3 auras por token: emanação, quadrado, cone (90°) ou linha, medidas em ft/m/quadrados | Só quem aplica |
-| `SceneSuite_Reach` — **Alcance** | Quadrados ameaçados por tamanho (alto/longo), arma de haste e exceção de 10 ft, bem translúcido | Só quem aplica |
+| `SceneSuite_Reach` — **Alcance** | Quadrados ameaçados a partir do alcance digitado, arma de haste e exceção de 10 ft, bem translúcido | Só quem aplica |
 | `SceneSuite_SpellAreas` — **Áreas de Magia** | Áreas de efeito digitando o tamanho em ft ou m (explosão, emanação, cilindro, cone, linha, quadrado) | Só quem cria |
 | `SceneSuite_Weather` — **Clima** | Chuva, tempestade, neve, nevasca, névoa, vendaval, areia, cinzas, folhas, noite, submerso, vaga-lumes | **Todos** que quiserem ver o efeito |
 | `SceneSuite_SpellFX` — **Animações de Magia** | 32 animações (bola de fogo, relâmpago, mísseis mágicos, raios, curas, explosões de luz...) | **Todos** que quiserem ver a animação |
@@ -20,7 +20,10 @@ mundo, mesmo para quem não instalou o plugin. Clima e animações são desenhad
 na tela de cada um, em tempo real. Por isso esses dois só aparecem para quem
 tem o plugin, e por isso também não bloqueiam cliques nos tokens.
 
-Todos os botões ficam numa categoria de ferramentas chamada **Scene Suite**.
+Cada plugin tem **seu próprio botão** na barra de ferramentas do Scene
+(Condições, Auras, Alcance, Áreas de Magia, Clima, Animações de Magia). Clicar
+no botão ativa a ferramenta principal; passar o mouse mostra só as opções
+daquele plugin.
 
 ---
 
@@ -65,8 +68,7 @@ apague (ou mova) as pastas que você não quer antes de rodar.
 - **Condição personalizada**: nome, cor e duração livres.
 - **Só o mestre vê**: as condições novas ficam visíveis apenas para o mestre.
 - **Avançar rodada** (mestre): diminui todas as durações e remove as que
-  acabaram. O que expirou aparece numa mensagem no seu chat. **Desfazer**
-  volta o último avanço.
+  acabaram. **Desfazer** volta o último avanço.
 - **Configurar exibição** (mestre): ícones acima, abaixo ou dos lados do
   token, em 4 tamanhos. Os nomes podem aparecer ao passar o mouse, sempre, ou
   nunca.
@@ -100,21 +102,20 @@ mudar o tamanho das células do grid.
 
 A ferramenta **Alcance** mostra os quadrados ameaçados em corpo a corpo:
 
-- **Pelo tamanho do token**, como criatura alta ou longa. Médio = 5 ft,
-  Grande = 10/5, Enorme = 15/10, Imenso = 20/15, Colossal = 30/20. Ou digite
-  um valor manual.
+- **Alcance natural** digitado em `ft`, `m` ou `q`. O painel lembra a tabela
+  do Pathfinder: Médio 5 ft, Grande 10/5, Enorme 15/10, Imenso 20/15,
+  Colossal 30/20 (alto/longo).
 - **Arma de haste**: dobra o alcance e deixa de ameaçar os quadrados próximos
   (até o alcance natural). Há uma opção para continuar ameaçando adjacentes.
 - **Exceção de 10 ft**: com alcance de 10 ft, alcança 2 quadrados na diagonal.
-- A cor segue o lado do token (inimigo vermelho, aliado azul, neutro amarelo)
-  ou uma cor escolhida.
+- **Cor** escolhida por você em cada token.
 
 **Para não poluir o tabuleiro**, o alcance é um preenchimento bem translúcido
 (6–10%) com contorno tracejado. Por padrão ele só aparece ao passar o mouse
 ou selecionar o token. O mestre muda isso para toda a mesa com **Modo de
 exibição**: *ao passar o mouse* (recomendado), *sempre* (ainda mais
-translúcido) ou *ocultar todos*. **Automático nos selecionados** aplica o
-alcance por tamanho em vários tokens de uma vez.
+translúcido) ou *ocultar todos*. Selecionando vários tokens antes de abrir o
+painel, o mesmo alcance é aplicado em todos.
 
 ## 4. Áreas de Magia
 
@@ -189,8 +190,8 @@ de Gelo/Cone de Frio para *Blizzard*, Relâmpago/Convocar Relâmpagos para
 
 - Os plugins foram escritos contra a documentação e o código-fonte do SDK 3
   e testados num SDK **simulado** (veja abaixo), não num Firecast real. Faça
-  um teste rápido numa mesa vazia antes da sessão. Se aparecer erro, abra
-  `/console` no chat e envie a mensagem.
+  um teste rápido numa mesa vazia antes da sessão. Os plugins não escrevem
+  nada no chat; se algo der errado, o erro aparece em `/console`.
 - Quem não é mestre só altera condições, auras e alcance dos **próprios**
   tokens.
 - Em grid hexagonal, auras e áreas usam a forma suave (a regra 5-10-5 só vale

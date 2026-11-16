@@ -58,7 +58,6 @@ PLUGINS = {
     "SceneSuite_Reach": {
         "tools": {
             "tool_reach": "lorc/halberd",
-            "tool_auto": "lorc/spear-hook",
             "tool_view": "delapouite/eye-target",
             "tool_clear": "delapouite/broom",
         },

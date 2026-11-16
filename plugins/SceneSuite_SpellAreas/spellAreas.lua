@@ -18,6 +18,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("gui.lua");
 require("dialogs.lua");
@@ -25,7 +26,7 @@ require("fsCommon.lua");
 
 local FSC = FSC;
 local PREFIX = "fssa_";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_SpellAreas";
 local FX_MESSAGE = "fsfx_play";
 
 FSSA = FSSA or {};
@@ -230,7 +231,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local mouseCell = nil;    -- posição atual do mouse (coord. de célula)
 	local freeOrigin = false;
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Áreas de Magia", 53);
 
 	local function snapPoint(cx, cy, free)
 		if free then
@@ -398,7 +399,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 		local ok, err = pcall(FSSA.create, scene, cfg, geo, ox, oy, angle);
 
 		if not ok then
-			FSC.chatLocal(scene, "[Áreas de Magia] erro: " .. tostring(err));
+			FSC.logError("SceneSuite.Areas", err);
 		else
 			FSSA.sendFX(scene, cfg, ox, oy, angle, geo.sq);
 		end;
@@ -441,7 +442,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	end;
 
 	toolId = viewport:addToolButton(TOOL_CATEGORY, "Área de magia (tamanho em ft / m)",
-		"/images/tool_area.png", 40, {selectable = true},
+		"/images/tool_area.png", 40, {selectable = true, defaultOfCategory = true},
 		function()
 			if FSC.isSpectator(scene) then
 				return;
@@ -500,7 +501,6 @@ SceneLib.registerPlugin(function(scene, attachment)
 					it:delete();
 				end;
 
-				FSC.chatLocal(scene, "[Áreas de Magia] " .. #doomed .. " área(s) removida(s).");
 			end);
 		end);
 end);

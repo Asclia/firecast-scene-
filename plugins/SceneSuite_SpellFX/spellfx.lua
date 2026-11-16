@@ -21,6 +21,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("system.lua");
 require("gui.lua");
@@ -29,7 +30,7 @@ require("fsCommon.lua");
 
 local FSC = FSC;
 local FX_MESSAGE = "fsfx_play";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_SpellFX";
 local FRAME_MS = 25;
 
 local rnd = math.random;
@@ -1173,7 +1174,7 @@ local function newEngine(scene)
 				if ok then
 					keep[#keep + 1] = e;
 				else
-					FSC.chatLocal(scene, "[Animações] erro: " .. tostring(err));
+					FSC.logError("SceneSuite.Animacoes", err);
 				end;
 			end;
 		end;
@@ -1201,7 +1202,7 @@ local function newEngine(scene)
 		local ok, e = pcall(d.build, m, cs);
 
 		if not ok or e == nil then
-			FSC.chatLocal(scene, "[Animações] erro ao montar '" .. tostring(m.fx) .. "': " .. tostring(e));
+			FSC.logError("SceneSuite.Animacoes", tostring(m.fx) .. ": " .. tostring(e));
 			return;
 		end;
 
@@ -1260,7 +1261,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local listeners = {};
 	local pending = nil;   -- {sx, sy, targets = {...}}
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Animações de Magia", 55);
 
 	local function sizeSq(d)
 		local txt = (cfg and cfg.size ~= "" and cfg.size) or d.size;
@@ -1413,7 +1414,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	end;
 
 	viewport:addToolButton(TOOL_CATEGORY, "Animações de magia",
-		"/images/tool_fx.png", 60, {selectable = true},
+		"/images/tool_fx.png", 60, {selectable = true, defaultOfCategory = true},
 		function()
 			if FSC.isSpectator(scene) then
 				return;

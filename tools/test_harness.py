@@ -95,7 +95,12 @@ local function newCanvas()
   c.addPath = function(self) return newOp(self, "opPath") end
   c.addText = function(self) return newOp(self, "opText") end
   c.addBitmap = function(self) return newOp(self, "opBitmap") end
-  c.getOp = function(self, i) return self._ops[i + 1] end
+  c.getOp = function(self, i)
+    if MOCK.oneBasedOps then
+      assert(i >= 1, "índice inválido"); return self._ops[i]
+    end
+    return self._ops[i + 1]
+  end
   c.findByName = function(self, n) for _, o in ipairs(self._ops) do if o.name == n then return o end end return nil end
   c.clear = function(self) self._ops = {} end
   setmetatable(c, {__index = function(t, k) if k == "opCount" then return #rawget(t, "_ops") end end})
@@ -213,8 +218,16 @@ def lfm_script(path):
 
 
 def main():
+    for one_based in (False, True):
+        print("== getOp %s ==" % ("1-based" if one_based else "0-based"))
+        run(one_based)
+    print("TODOS OS CENÁRIOS PASSARAM")
+
+
+def run(one_based):
     L = lua54.LuaRuntime(unpack_returned_tuples=True)
     L.execute(MOCK)
+    L.globals().MOCK.oneBasedOps = one_based
 
     order = {
         "SceneSuite_Conditions": ["fsCommon.lua", "condData.lua", "conditions.lua"],
@@ -239,7 +252,6 @@ def main():
     log = L.globals().MOCK.log
     for i in range(1, len(log) + 1):
         print("  log:", log[i])
-    print("TODOS OS CENÁRIOS PASSARAM")
 
 
 if __name__ == "__main__":

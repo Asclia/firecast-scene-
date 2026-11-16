@@ -1,9 +1,7 @@
 --[[
   Scene Suite - Alcance (reach)
   Mostra os quadrados que uma criatura ameaça em corpo a corpo:
-   - alcance natural pelo tamanho do token (Pathfinder: Médio 5 ft, Grande
-     10/5 ft, Enorme 15/10, Imenso 20/15, Colossal 30/20 - alta/longa) ou
-     manual;
+   - alcance natural digitado (ft, m ou quadrados);
    - arma de haste: dobra o alcance e deixa de ameaçar os quadrados até o
      alcance natural (opcionalmente continua ameaçando adjacentes);
    - exceção de 10 ft: alcança 2 quadrados na diagonal.
@@ -18,6 +16,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("gui.lua");
 require("dialogs.lua");
@@ -28,27 +27,10 @@ local PREFIX = "fsreach_";
 local UD_FIELD = "fsReach";
 local SIG_FIELD = "fsReachSig";
 local VIEW_FIELD = "fsReachView";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_Reach";
 
 FSREACH = FSREACH or {};
 local FSREACH = FSREACH;
-
--- Alcance natural (em pés) pelo tamanho do token (em quadrados)
-function FSREACH.naturalBySize(sizeSq, long)
-	if sizeSq < 0.75 then
-		return 0;       -- Miúdo ou menor
-	elseif sizeSq < 1.5 then
-		return 5;       -- Pequeno / Médio
-	elseif sizeSq < 2.5 then
-		return long and 5 or 10;    -- Grande
-	elseif sizeSq < 3.5 then
-		return long and 10 or 15;   -- Enorme
-	elseif sizeSq < 5 then
-		return long and 15 or 20;   -- Imenso
-	else
-		return long and 20 or 30;   -- Colossal
-	end;
-end;
 
 function FSREACH.getRecord(token)
 	local ud = token.userData;
@@ -74,16 +56,7 @@ end;
 -- Calcula alcance mínimo e máximo (em quadrados) e um texto explicativo
 function FSREACH.compute(scene, token, r)
 	local fps = FSC.feetPerSquare(scene);
-	local naturalFt;
-
-	if r.preset == "manual" then
-		local _, ft = FSC.parseDistance(r.natural, scene, "ft");
-		naturalFt = ft;
-	else
-		local cs = FSC.cellSize(scene);
-		local sizeSq = math.max(token.width, token.height) / cs;
-		naturalFt = FSREACH.naturalBySize(sizeSq, r.preset == "long");
-	end;
+	local _, naturalFt = FSC.parseDistance(r.natural, scene, "ft");
 
 	if naturalFt == nil then
 		return nil, "Alcance inválido.";
@@ -134,7 +107,7 @@ function FSREACH.renderToken(scene, token, r, view)
 		return;
 	end;
 
-	local color = (r.autoColor ~= "0") and FSC.colorForToken(token) or (r.color or "#E53935");
+	local color = r.color or "#E53935";
 
 	local spec = {
 		shape = "emanation",
@@ -189,8 +162,8 @@ function FSREACH.rerenderAll(scene)
 	end;
 end;
 
-local DEFAULT_RECORD = {preset = "tall", natural = "5 ft", weapon = "0", adjacent = "0",
-                        diag10 = "1", autoColor = "1", color = "#E53935", diag = "pf"};
+local DEFAULT_RECORD = {natural = "5 ft", weapon = "0", adjacent = "0",
+                        diag10 = "1", color = "#E53935", diag = "pf"};
 
 ----------------------------------------------------------------------
 -- Formulário
@@ -277,10 +250,10 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local viewport = scene.viewport;
 	local lstMouseDown = nil;
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Alcance", 52);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Alcance: clique em um token (ou use os selecionados)",
-		"/images/tool_reach.png", 30, {selectable = true},
+		"/images/tool_reach.png", 30, {selectable = true, defaultOfCategory = true},
 		function()
 			local sel = FSC.selectedTokens(scene);
 
@@ -312,40 +285,6 @@ SceneLib.registerPlugin(function(scene, attachment)
 				viewport:unlisten(lstMouseDown);
 				lstMouseDown = nil;
 			end;
-		end);
-
-	viewport:addToolButton(TOOL_CATEGORY, "Alcance: automático (pelo tamanho) nos selecionados",
-		"/images/tool_auto.png", 31, {dontFocus = true},
-		function()
-			local sel = FSC.selectedTokens(scene);
-
-			if #sel == 0 then
-				showMessage("Selecione os tokens primeiro.");
-				return;
-			end;
-
-			local n = 0;
-
-			for _, t in ipairs(sel) do
-				if FSC.canEdit(scene, t) then
-					local r = FSREACH.getRecord(t) or {};
-
-					for k, v in pairs(DEFAULT_RECORD) do
-						if r[k] == nil then
-							r[k] = v;
-						end;
-					end;
-
-					if r.preset == "manual" then
-						r.preset = "tall";
-					end;
-
-					FSREACH.setRecord(scene, t, r);
-					n = n + 1;
-				end;
-			end;
-
-			FSC.chatLocal(scene, "[Alcance] alcance automático aplicado em " .. n .. " token(s).");
 		end);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Alcance: modo de exibição na mesa (mestre)",
@@ -395,7 +334,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 			end;
 		end);
 
-	-- Redesenha quando o token muda de tamanho (alcance automático) ou sai do grid
+	-- Redesenha quando o token muda de tamanho ou sai do grid
 	FSC.watchTokenBounds(scene, "fsreach", function(token)
 		if not scene.isGM then
 			return;

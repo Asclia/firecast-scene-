@@ -27,12 +27,10 @@
 		function self:loadRecord(r)
 			loading = true;
 			r = r or {};
-			self.cmbPreset.value = r.preset or "tall";
 			self.edtNatural.text = r.natural or "5 ft";
 			self.cbxWeapon.checked = r.weapon == "1";
 			self.cbxAdjacent.checked = r.adjacent == "1";
 			self.cbxDiag10.checked = r.diag10 ~= "0";
-			self.cbxAutoColor.checked = r.autoColor ~= "0";
 			self.cmbColor.color = r.color or "#E53935";
 			self.cmbDiag.value = r.diag or "pf";
 			loading = false;
@@ -41,12 +39,10 @@
 
 		function self:readRecord()
 			return {
-				preset = self.cmbPreset.value or "tall",
 				natural = self.edtNatural.text or "5 ft",
 				weapon = self.cbxWeapon.checked and "1" or "0",
 				adjacent = self.cbxAdjacent.checked and "1" or "0",
 				diag10 = self.cbxDiag10.checked and "1" or "0",
-				autoColor = self.cbxAutoColor.checked and "1" or "0",
 				color = self.cmbColor.color or "#E53935",
 				diag = self.cmbDiag.value or "pf"
 			};
@@ -57,9 +53,7 @@
 				return;
 			end;
 
-			self.edtNatural.enabled = (self.cmbPreset.value == "manual");
 			self.cbxAdjacent.enabled = self.cbxWeapon.checked;
-			self.cmbColor.enabled = not self.cbxAutoColor.checked;
 
 			if options.describe ~= nil then
 				self.labHint.text = options.describe(self:readRecord());
@@ -92,15 +86,13 @@
 	<layout align="client" margins="{left=10, right=10, top=8, bottom=8}">
 		<label name="labTitle" left="0" top="0" width="410" height="24" fontSize="16" fontStyle="bold" wordWrap="false"/>
 
-		<label class="cap" left="0" top="32" text="Alcance natural:"/>
-		<comboBox name="cmbPreset" left="136" top="32" width="270" height="26"
-		          items="{'Pelo tamanho do token (criatura alta)', 'Pelo tamanho do token (criatura longa)', 'Manual'}"
-		          values="{'tall', 'long', 'manual'}" value="tall" onChange="self:updateHint()"/>
+		<label class="cap" left="0" top="40" text="Alcance natural:"/>
+		<edit name="edtNatural" left="136" top="40" width="100" height="26" text="5 ft" onChange="self:updateHint()"/>
+		<label left="242" top="40" width="164" height="26" fontSize="11" fontColor="#B0BEC5"
+		       text="ex.: 5 ft, 3 m, 2 q" vertTextAlign="center"/>
 
-		<label class="cap" left="0" top="64" text="Alcance manual:"/>
-		<edit name="edtNatural" left="136" top="64" width="100" height="26" text="5 ft" onChange="self:updateHint()"/>
-		<label left="242" top="64" width="164" height="26" fontSize="11" fontColor="#B0BEC5"
-		       text="ex.: 10 ft, 3 m, 2 q" vertTextAlign="center"/>
+		<label left="136" top="68" width="270" height="22" fontSize="10" fontColor="#B0BEC5" wordWrap="true"
+		       text="Médio 5 ft · Grande 10/5 · Enorme 15/10 · Imenso 20/15 · Colossal 30/20 (alto/longo)"/>
 
 		<checkBox name="cbxWeapon" left="136" top="96" width="280" height="26"
 		          text="Arma de haste (dobra o alcance)" onChange="self:updateHint()"/>
@@ -115,9 +107,7 @@
 		          values="{'pf', 'board'}" value="pf" onChange="self:updateHint()"/>
 
 		<label class="cap" left="0" top="214" text="Cor:"/>
-		<checkBox name="cbxAutoColor" left="136" top="214" width="200" height="26"
-		          text="Pelo lado (amigo/inimigo)" checked="true" onChange="self:updateHint()"/>
-		<colorComboBox name="cmbColor" left="346" top="214" width="60" height="26" useAlpha="false" color="#E53935"/>
+		<colorComboBox name="cmbColor" left="136" top="214" width="60" height="26" useAlpha="false" color="#E53935"/>
 
 		<label name="labHint" left="0" top="250" width="410" height="54" fontSize="12" fontColor="#FFCC66"
 		       wordWrap="true" horzTextAlign="center"/>

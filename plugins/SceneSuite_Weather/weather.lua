@@ -14,6 +14,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("system.lua");
 require("gui.lua");
@@ -22,7 +23,7 @@ require("fsCommon.lua");
 
 local FSC = FSC;
 local UD_FIELD = "fsWeather";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_Weather";
 local FRAME_MS = 40;
 
 local rnd = math.random;
@@ -522,7 +523,7 @@ local function newEngine(scene)
 
 		if not ok then
 			stopDrawing();
-			FSC.chatLocal(scene, "[Clima] erro no efeito: " .. tostring(err));
+			FSC.logError("SceneSuite.Clima", err);
 		end;
 	end;
 
@@ -598,10 +599,10 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local eng = newEngine(scene);
 	local frm = nil;
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Clima", 54);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Clima: escolher efeito (mestre)",
-		"/images/tool_weather.png", 50, {dontFocus = true},
+		"/images/tool_weather.png", 50, {defaultOfCategory = true},
 		function()
 			if not scene.isGM then
 				showMessage("Apenas o mestre muda o clima. Use o outro botão para ligar/desligar só para você.");
@@ -634,7 +635,6 @@ SceneLib.registerPlugin(function(scene, attachment)
 	viewport:addToolButton(TOOL_CATEGORY, "Clima: ligar/desligar só para mim",
 		"/images/tool_local.png", 51, {dontFocus = true},
 		function()
-			local off = eng:toggleLocal();
-			FSC.chatLocal(scene, off and "[Clima] efeitos desligados para você." or "[Clima] efeitos religados para você.");
+			eng:toggleLocal();
 		end);
 end);

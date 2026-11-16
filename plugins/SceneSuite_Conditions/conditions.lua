@@ -12,6 +12,7 @@
 
 require("scene.lua");
 require("firecast.lua");
+require("log.lua");
 require("utils.lua");
 require("system.lua");
 require("gui.lua");
@@ -23,7 +24,7 @@ local FSC = FSC;
 local PREFIX = "fscond_";
 local UD_FIELD = "fsConditions";
 local CFG_FIELD = "fsCondCfg";
-local TOOL_CATEGORY = "SceneSuite";
+local TOOL_CATEGORY = "SSuite_Conditions";
 
 FSCOND = FSCOND or {};
 local FSCOND = FSCOND;
@@ -291,7 +292,7 @@ function FSCOND.render(scene, token, list, cfg)
 	token:endUpdate();
 
 	if not ok then
-		FSC.chatLocal(scene, "[Condições] erro ao desenhar: " .. tostring(err));
+		FSC.logError("SceneSuite.Condicoes", err);
 	end;
 end;
 
@@ -469,7 +470,6 @@ local undoSnapshots = {};
 
 function FSCOND.advanceRound(scene)
 	local snap = {};
-	local expired = {};
 	local changed = 0;
 
 	for _, t in ipairs(FSC.allTokens(scene)) do
@@ -488,9 +488,7 @@ function FSCOND.advanceRound(scene)
 					r = r - 1;
 					dirty = true;
 
-					if r <= 0 then
-						expired[#expired + 1] = entryName(e) .. " (" .. ((t.name ~= "" and t.name) or "token") .. ")";
-					else
+					if r > 0 then
 						e.r = tostring(r);
 						out[#out + 1] = e;
 					end;
@@ -508,14 +506,6 @@ function FSCOND.advanceRound(scene)
 	end;
 
 	undoSnapshots[scene.objectID] = snap;
-
-	local msg = "[Condições] Rodada avançada: " .. changed .. " token(s) atualizado(s).";
-
-	if #expired > 0 then
-		msg = msg .. " Expiraram: " .. table.concat(expired, ", ") .. ".";
-	end;
-
-	FSC.chatLocal(scene, msg);
 end;
 
 function FSCOND.undoRound(scene)
@@ -533,7 +523,6 @@ function FSCOND.undoRound(scene)
 	end;
 
 	undoSnapshots[scene.objectID] = nil;
-	FSC.chatLocal(scene, "[Condições] Último avanço de rodada desfeito.");
 end;
 
 function FSCOND.rerenderAll(scene)
@@ -586,7 +575,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local viewport = scene.viewport;
 	local lstMouseDown = nil;
 
-	viewport:setupToolCategory(TOOL_CATEGORY, "Scene Suite", 50);
+	FSC.setupCategory(viewport, TOOL_CATEGORY, "Condições", 50);
 
 	local function openForSelectionOr(token)
 		local sel = FSC.selectedTokens(scene);
@@ -612,7 +601,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	end;
 
 	viewport:addToolButton(TOOL_CATEGORY, "Condições: clique em um token (ou use os selecionados)",
-		"/images/tool_cond.png", 10, {selectable = true},
+		"/images/tool_cond.png", 10, {selectable = true, defaultOfCategory = true},
 		function()
 			-- se já há tokens selecionados, abre direto
 			openForSelectionOr(nil);
