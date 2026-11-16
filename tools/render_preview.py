@@ -32,7 +32,7 @@ MOCK.runTimers()
 -- condições
 FSCOND.setList(scene, goblin, {{id="shaken", r="3", h="0"}, {id="prone", r="", h="0"}, {id="blinded", r="2", h="0"}, {id="bleed", r="", h="0"}})
 FSCOND.setList(scene, ogro, {{id="entangled", r="5", h="0"}, {id="ff_slow", r="", h="0"}})
-FSCOND.setList(scene, guerreiro, {{id="haste", r="10", h="0"}, {id="bless", r="", h="0"}, {id="custom", n="Marcado", r="2", c="#00838F", h="0"}})
+FSCOND.setList(scene, guerreiro, {{id="haste", r="20", u="min", h="0"}, {id="bless", r="600", u="h", h="0"}, {id="custom", n="Marcado", r="2", c="#00838F", h="0"}})
 
 -- alcance: ogro (grande, alto) e guerreiro com arma de haste
 scene.userData.fsReachView = "always"

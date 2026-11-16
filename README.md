@@ -62,9 +62,12 @@ apague (ou mova) as pastas que você não quer antes de rodar.
   inglês), magias e efeitos comuns (Velocidade, Bênção, Armadura Arcana...) e
   os status do FFd20 (Berserk, Doom, Protect, Shell, Reflect, Regen...). Dá
   para filtrar por grupo.
-- **Duração**: o campo ao lado de cada condição aceita rodadas (`3`), minutos
-  (`1min` = 10 rodadas) ou horas (`1h`). Vazio = indefinida. Para dar a mesma
-  duração a todas as marcadas, use "Duração p/ marcadas".
+- **Duração**: ao lado de cada condição há um número e a unidade —
+  **rodadas, minutos ou horas** (1 minuto = 10 rodadas, 1 hora = 600). Vazio =
+  indefinida. Para dar a mesma duração a todas as marcadas, use "Duração p/
+  marcadas". No token, o selo mostra `3` (rodadas), `2m` ou `1h`, e os nomes
+  mostram a duração restante na unidade escolhida ("Velocidade (1,9 min)").
+  O avanço de rodada desconta de tudo, inclusive das durações em minutos/horas.
 - **Condição personalizada**: nome, cor e duração livres.
 - **Só o mestre vê**: as condições novas ficam visíveis apenas para o mestre.
 - **Avançar rodada** (mestre): diminui todas as durações e remove as que

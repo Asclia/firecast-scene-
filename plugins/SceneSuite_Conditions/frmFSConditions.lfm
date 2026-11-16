@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ARQUIVO GERADO por tools/build.py a partir de tools/templates/frmFSConditions.lfm.tpl. Edite o template. -->
-<popupForm name="frmFSConditions" width="740" height="580" drawContainer="true" resizable="true"
+<popupForm name="frmFSConditions" width="940" height="600" drawContainer="true" resizable="true"
            placement="center" cancelable="true">
 
 	<script><![CDATA[
@@ -54,6 +54,7 @@
 				local e = cur[c.id];
 				self["cbx_" .. c.id].checked = e ~= nil;
 				self["edt_" .. c.id].text = (e ~= nil and e.r) or "";
+				self["cmbU_" .. c.id].value = (e ~= nil and e.u) or "r";
 			end);
 
 			local names = {};
@@ -61,8 +62,8 @@
 			for _, cu in ipairs(options.customs or {}) do
 				local txt = cu.n or "?";
 
-				if cu.r ~= nil and cu.r ~= "" then
-					txt = txt .. " (" .. cu.r .. ")";
+				if cu.d ~= nil then
+					txt = txt .. " (" .. cu.d .. ")";
 				end;
 
 				names[#names + 1] = txt;
@@ -85,7 +86,8 @@
 
 			eachCondition(function(c)
 				if self["cbx_" .. c.id].checked then
-					result.list[#result.list + 1] = {id = c.id, r = self["edt_" .. c.id].text or ""};
+					result.list[#result.list + 1] = {id = c.id, r = self["edt_" .. c.id].text or "",
+					                                 u = self["cmbU_" .. c.id].value or "r"};
 				end;
 			end);
 
@@ -109,7 +111,8 @@
 			end;
 
 			if options.onAddCustom ~= nil then
-				options.onAddCustom({n = name, r = self.edtCustomRounds.text or "", c = self.cmbCustomColor.color},
+				options.onAddCustom({n = name, r = self.edtCustomRounds.text or "", u = self.cmbCustomUnit.value or "r",
+				                     c = self.cmbCustomColor.color},
 				                    self:collect());
 			end;
 
@@ -134,17 +137,19 @@
 
 		function self:setAllRounds()
 			local v = self.edtAllRounds.text or "";
+			local u = self.cmbAllUnit.value or "r";
 
 			eachCondition(function(c)
 				if self["cbx_" .. c.id].checked then
 					self["edt_" .. c.id].text = v;
+					self["cmbU_" .. c.id].value = u;
 				end;
 			end);
 		end;
 	]]></script>
 
 	<layout align="top" height="66" margins="{left=8, right=8, top=6}">
-		<label name="labTitle" left="0" top="0" width="720" height="24" fontSize="16" fontStyle="bold"
+		<label name="labTitle" left="0" top="0" width="920" height="24" fontSize="16" fontStyle="bold"
 		       text="Condições" wordWrap="false"/>
 		<label left="0" top="32" width="50" height="26" text="Mostrar:" vertTextAlign="center"/>
 		<comboBox name="cmbFilter" left="52" top="32" width="150" height="26"
@@ -153,8 +158,10 @@
 		<label left="214" top="32" width="160" height="26" text="Duração p/ marcadas:" vertTextAlign="center"
 		       horzTextAlign="trailing"/>
 		<edit name="edtAllRounds" left="378" top="32" width="48" height="26" textPrompt="&#8734;" horzTextAlign="center"/>
-		<button left="430" top="32" width="64" height="26" text="Aplicar" onClick="self:setAllRounds()"/>
-		<checkBox name="cbxHidden" left="508" top="32" width="220" height="26"
+		<comboBox name="cmbAllUnit" left="430" top="32" width="90" height="26"
+		          items="{'rodadas', 'minutos', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
+		<button left="524" top="32" width="64" height="26" text="Aplicar" onClick="self:setAllRounds()"/>
+		<checkBox name="cbxHidden" left="606" top="32" width="250" height="26"
 		          text="Novas condições só p/ o mestre"/>
 	</layout>
 
@@ -163,476 +170,654 @@
 		<label left="0" top="8" width="180" height="26" text="Condição personalizada:" vertTextAlign="center"/>
 		<edit name="edtCustomName" left="180" top="8" width="210" height="26" textPrompt="Ex.: Marcado pelo Inquisidor"/>
 		<colorComboBox name="cmbCustomColor" left="396" top="8" width="60" height="26" color="#00838F" useAlpha="false"/>
-		<edit name="edtCustomRounds" left="462" top="8" width="60" height="26" textPrompt="rodadas" horzTextAlign="center"/>
-		<button left="528" top="8" width="90" height="26" text="Adicionar" onClick="self:doAddCustom()"/>
-		<button left="622" top="8" width="100" height="26" text="Limpar pers." onClick="self:doClearCustoms()"/>
-		<label name="labCustoms" left="0" top="38" width="720" height="22" fontSize="11" fontColor="#B0BEC5"
+		<edit name="edtCustomRounds" left="462" top="8" width="48" height="26" textPrompt="&#8734;" horzTextAlign="center"/>
+		<comboBox name="cmbCustomUnit" left="514" top="8" width="90" height="26"
+		          items="{'rodadas', 'minutos', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
+		<button left="610" top="8" width="90" height="26" text="Adicionar" onClick="self:doAddCustom()"/>
+		<button left="704" top="8" width="100" height="26" text="Limpar pers." onClick="self:doClearCustoms()"/>
+		<label name="labCustoms" left="0" top="38" width="920" height="22" fontSize="11" fontColor="#B0BEC5"
 		       wordWrap="false"/>
-		<label left="0" top="66" width="330" height="30" fontSize="11" fontColor="#B0BEC5" wordWrap="true"
-		       text="Duração em rodadas (vazio = indefinida). Aceita 1min = 10 rodadas, 1h = 600."/>
-		<button left="402" top="66" width="110" height="30" text="Remover todas" onClick="self:doClearAll()"/>
-		<button left="518" top="66" width="100" height="30" text="Cancelar" onClick="self:closeMe()"/>
-		<button left="622" top="66" width="100" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
+		<label left="0" top="66" width="480" height="30" fontSize="11" fontColor="#B0BEC5" wordWrap="true"
+		       text="Duração vazia = indefinida. 1 minuto = 10 rodadas; 1 hora = 600 rodadas. O avanço de rodada desconta de todas."/>
+		<button left="590" top="66" width="110" height="30" text="Remover todas" onClick="self:doClearAll()"/>
+		<button left="704" top="66" width="100" height="30" text="Cancelar" onClick="self:closeMe()"/>
+		<button left="808" top="66" width="100" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
 	</layout>
 
 	<scrollBox align="client" margins="{left=4, right=4}">
 		<flowLayout name="flaTiles" align="top" autoHeight="true" margins="{right=4}">
-				<flowPart name="grpHdr_pf" height="30" minWidth="680" maxWidth="5000" margins="{left=4, right=4, top=8}">
+				<flowPart name="grpHdr_pf" height="30" minWidth="880" maxWidth="5000" margins="{left=4, right=4, top=8}">
 					<label align="client" text="Condições - Pathfinder 1e" fontSize="15" fontStyle="bold" fontColor="#FFCC66"/>
 					<horzLine align="bottom" strokeColor="#FFCC6670"/>
 				</flowPart>
 				<flowLineBreak/>
-				<flowPart name="flp_bleed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_bleed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/bleed.png" hitTest="false"/>
 					<checkBox name="cbx_bleed" left="30" top="3" width="150" height="24" fontSize="12" text="Sangrando (Bleed)"/>
-					<edit name="edt_bleed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_bleed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_bleed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_blinded" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_blinded" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/blinded.png" hitTest="false"/>
 					<checkBox name="cbx_blinded" left="30" top="3" width="150" height="24" fontSize="12" text="Cego (Blinded)"/>
-					<edit name="edt_blinded" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_blinded" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_blinded" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_broken" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_broken" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/broken.png" hitTest="false"/>
 					<checkBox name="cbx_broken" left="30" top="3" width="150" height="24" fontSize="12" text="Quebrado (Broken)"/>
-					<edit name="edt_broken" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_broken" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_broken" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_confused" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_confused" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/confused.png" hitTest="false"/>
 					<checkBox name="cbx_confused" left="30" top="3" width="150" height="24" fontSize="12" text="Confuso (Confused)"/>
-					<edit name="edt_confused" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_confused" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_confused" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_cowering" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_cowering" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/cowering.png" hitTest="false"/>
 					<checkBox name="cbx_cowering" left="30" top="3" width="150" height="24" fontSize="12" text="Encolhido (Cowering)"/>
-					<edit name="edt_cowering" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_cowering" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_cowering" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_dazed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_dazed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/dazed.png" hitTest="false"/>
 					<checkBox name="cbx_dazed" left="30" top="3" width="150" height="24" fontSize="12" text="Pasmo (Dazed)"/>
-					<edit name="edt_dazed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_dazed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_dazed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_dazzled" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_dazzled" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/dazzled.png" hitTest="false"/>
 					<checkBox name="cbx_dazzled" left="30" top="3" width="150" height="24" fontSize="12" text="Ofuscado (Dazzled)"/>
-					<edit name="edt_dazzled" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_dazzled" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_dazzled" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_deafened" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_deafened" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/deafened.png" hitTest="false"/>
 					<checkBox name="cbx_deafened" left="30" top="3" width="150" height="24" fontSize="12" text="Surdo (Deafened)"/>
-					<edit name="edt_deafened" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_deafened" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_deafened" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_disabled" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_disabled" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/disabled.png" hitTest="false"/>
 					<checkBox name="cbx_disabled" left="30" top="3" width="150" height="24" fontSize="12" text="Incapacitado (Disabled)"/>
-					<edit name="edt_disabled" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_disabled" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_disabled" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_dying" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_dying" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/dying.png" hitTest="false"/>
 					<checkBox name="cbx_dying" left="30" top="3" width="150" height="24" fontSize="12" text="Morrendo (Dying)"/>
-					<edit name="edt_dying" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_dying" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_dying" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_dead" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_dead" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/dead.png" hitTest="false"/>
 					<checkBox name="cbx_dead" left="30" top="3" width="150" height="24" fontSize="12" text="Morto (Dead)"/>
-					<edit name="edt_dead" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_dead" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_dead" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_drained" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_drained" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/drained.png" hitTest="false"/>
 					<checkBox name="cbx_drained" left="30" top="3" width="150" height="24" fontSize="12" text="Dreno de Energia (Energy Drained)"/>
-					<edit name="edt_drained" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_drained" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_drained" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_entangled" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_entangled" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/entangled.png" hitTest="false"/>
 					<checkBox name="cbx_entangled" left="30" top="3" width="150" height="24" fontSize="12" text="Enredado (Entangled)"/>
-					<edit name="edt_entangled" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_entangled" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_entangled" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_fatigued" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_fatigued" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/fatigued.png" hitTest="false"/>
 					<checkBox name="cbx_fatigued" left="30" top="3" width="150" height="24" fontSize="12" text="Fatigado (Fatigued)"/>
-					<edit name="edt_fatigued" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_fatigued" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_fatigued" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_exhausted" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_exhausted" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/exhausted.png" hitTest="false"/>
 					<checkBox name="cbx_exhausted" left="30" top="3" width="150" height="24" fontSize="12" text="Exausto (Exhausted)"/>
-					<edit name="edt_exhausted" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_exhausted" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_exhausted" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_fascinated" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_fascinated" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/fascinated.png" hitTest="false"/>
 					<checkBox name="cbx_fascinated" left="30" top="3" width="150" height="24" fontSize="12" text="Fascinado (Fascinated)"/>
-					<edit name="edt_fascinated" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_fascinated" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_fascinated" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_flatfooted" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_flatfooted" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/flatfooted.png" hitTest="false"/>
 					<checkBox name="cbx_flatfooted" left="30" top="3" width="150" height="24" fontSize="12" text="Desprevenido (Flat-Footed)"/>
-					<edit name="edt_flatfooted" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_flatfooted" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_flatfooted" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_shaken" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_shaken" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/shaken.png" hitTest="false"/>
 					<checkBox name="cbx_shaken" left="30" top="3" width="150" height="24" fontSize="12" text="Abalado (Shaken)"/>
-					<edit name="edt_shaken" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_shaken" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_shaken" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_frightened" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_frightened" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/frightened.png" hitTest="false"/>
 					<checkBox name="cbx_frightened" left="30" top="3" width="150" height="24" fontSize="12" text="Amedrontado (Frightened)"/>
-					<edit name="edt_frightened" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_frightened" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_frightened" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_panicked" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_panicked" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/panicked.png" hitTest="false"/>
 					<checkBox name="cbx_panicked" left="30" top="3" width="150" height="24" fontSize="12" text="Em Pânico (Panicked)"/>
-					<edit name="edt_panicked" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_panicked" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_panicked" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_grappled" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_grappled" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/grappled.png" hitTest="false"/>
 					<checkBox name="cbx_grappled" left="30" top="3" width="150" height="24" fontSize="12" text="Agarrado (Grappled)"/>
-					<edit name="edt_grappled" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_grappled" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_grappled" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_pinned" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_pinned" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/pinned.png" hitTest="false"/>
 					<checkBox name="cbx_pinned" left="30" top="3" width="150" height="24" fontSize="12" text="Imobilizado (Pinned)"/>
-					<edit name="edt_pinned" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_pinned" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_pinned" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_helpless" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_helpless" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/helpless.png" hitTest="false"/>
 					<checkBox name="cbx_helpless" left="30" top="3" width="150" height="24" fontSize="12" text="Indefeso (Helpless)"/>
-					<edit name="edt_helpless" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_helpless" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_helpless" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_incorporeal" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_incorporeal" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/incorporeal.png" hitTest="false"/>
 					<checkBox name="cbx_incorporeal" left="30" top="3" width="150" height="24" fontSize="12" text="Incorpóreo (Incorporeal)"/>
-					<edit name="edt_incorporeal" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_incorporeal" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_incorporeal" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_invisible" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_invisible" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/invisible.png" hitTest="false"/>
 					<checkBox name="cbx_invisible" left="30" top="3" width="150" height="24" fontSize="12" text="Invisível (Invisible)"/>
-					<edit name="edt_invisible" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_invisible" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_invisible" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_nauseated" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_nauseated" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/nauseated.png" hitTest="false"/>
 					<checkBox name="cbx_nauseated" left="30" top="3" width="150" height="24" fontSize="12" text="Nauseado (Nauseated)"/>
-					<edit name="edt_nauseated" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_nauseated" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_nauseated" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_sickened" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_sickened" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/sickened.png" hitTest="false"/>
 					<checkBox name="cbx_sickened" left="30" top="3" width="150" height="24" fontSize="12" text="Enjoado (Sickened)"/>
-					<edit name="edt_sickened" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_sickened" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_sickened" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_paralyzed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_paralyzed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/paralyzed.png" hitTest="false"/>
 					<checkBox name="cbx_paralyzed" left="30" top="3" width="150" height="24" fontSize="12" text="Paralisado (Paralyzed)"/>
-					<edit name="edt_paralyzed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_paralyzed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_paralyzed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_petrified" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_petrified" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/petrified.png" hitTest="false"/>
 					<checkBox name="cbx_petrified" left="30" top="3" width="150" height="24" fontSize="12" text="Petrificado (Petrified)"/>
-					<edit name="edt_petrified" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_petrified" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_petrified" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_prone" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_prone" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/prone.png" hitTest="false"/>
 					<checkBox name="cbx_prone" left="30" top="3" width="150" height="24" fontSize="12" text="Caído (Prone)"/>
-					<edit name="edt_prone" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_prone" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_prone" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_stable" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_stable" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/stable.png" hitTest="false"/>
 					<checkBox name="cbx_stable" left="30" top="3" width="150" height="24" fontSize="12" text="Estável (Stable)"/>
-					<edit name="edt_stable" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_stable" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_stable" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_staggered" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_staggered" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/staggered.png" hitTest="false"/>
 					<checkBox name="cbx_staggered" left="30" top="3" width="150" height="24" fontSize="12" text="Vacilante (Staggered)"/>
-					<edit name="edt_staggered" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_staggered" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_staggered" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_stunned" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_stunned" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/stunned.png" hitTest="false"/>
 					<checkBox name="cbx_stunned" left="30" top="3" width="150" height="24" fontSize="12" text="Atordoado (Stunned)"/>
-					<edit name="edt_stunned" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_stunned" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_stunned" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_unconscious" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_unconscious" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/unconscious.png" hitTest="false"/>
 					<checkBox name="cbx_unconscious" left="30" top="3" width="150" height="24" fontSize="12" text="Inconsciente (Unconscious)"/>
-					<edit name="edt_unconscious" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_unconscious" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_unconscious" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_asleep" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_asleep" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/asleep.png" hitTest="false"/>
 					<checkBox name="cbx_asleep" left="30" top="3" width="150" height="24" fontSize="12" text="Dormindo (Asleep)"/>
-					<edit name="edt_asleep" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_asleep" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_asleep" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_poisoned" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_poisoned" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/poisoned.png" hitTest="false"/>
 					<checkBox name="cbx_poisoned" left="30" top="3" width="150" height="24" fontSize="12" text="Envenenado (Poisoned)"/>
-					<edit name="edt_poisoned" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_poisoned" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_poisoned" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_diseased" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_diseased" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/diseased.png" hitTest="false"/>
 					<checkBox name="cbx_diseased" left="30" top="3" width="150" height="24" fontSize="12" text="Doente (Diseased)"/>
-					<edit name="edt_diseased" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_diseased" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_diseased" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_burning" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_burning" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/burning.png" hitTest="false"/>
 					<checkBox name="cbx_burning" left="30" top="3" width="150" height="24" fontSize="12" text="Em Chamas (On Fire)"/>
-					<edit name="edt_burning" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_burning" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_burning" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_charmed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_charmed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/charmed.png" hitTest="false"/>
 					<checkBox name="cbx_charmed" left="30" top="3" width="150" height="24" fontSize="12" text="Enfeitiçado (Charmed)"/>
-					<edit name="edt_charmed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_charmed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_charmed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_dominated" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_dominated" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/dominated.png" hitTest="false"/>
 					<checkBox name="cbx_dominated" left="30" top="3" width="150" height="24" fontSize="12" text="Dominado (Dominated)"/>
-					<edit name="edt_dominated" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_dominated" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_dominated" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_marked" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_marked" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/marked.png" hitTest="false"/>
 					<checkBox name="cbx_marked" left="30" top="3" width="150" height="24" fontSize="12" text="Marcado (alvo) (Marked)"/>
-					<edit name="edt_marked" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_marked" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_marked" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
 				<flowLineBreak/>
-				<flowPart name="grpHdr_buff" height="30" minWidth="680" maxWidth="5000" margins="{left=4, right=4, top=8}">
+				<flowPart name="grpHdr_buff" height="30" minWidth="880" maxWidth="5000" margins="{left=4, right=4, top=8}">
 					<label align="client" text="Magias e efeitos comuns" fontSize="15" fontStyle="bold" fontColor="#FFCC66"/>
 					<horzLine align="bottom" strokeColor="#FFCC6670"/>
 				</flowPart>
 				<flowLineBreak/>
-				<flowPart name="flp_haste" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_haste" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/haste.png" hitTest="false"/>
 					<checkBox name="cbx_haste" left="30" top="3" width="150" height="24" fontSize="12" text="Velocidade (Haste)"/>
-					<edit name="edt_haste" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_haste" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_haste" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_slow" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_slow" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/slow.png" hitTest="false"/>
 					<checkBox name="cbx_slow" left="30" top="3" width="150" height="24" fontSize="12" text="Lentidão (Slow)"/>
-					<edit name="edt_slow" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_slow" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_slow" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_bless" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_bless" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/bless.png" hitTest="false"/>
 					<checkBox name="cbx_bless" left="30" top="3" width="150" height="24" fontSize="12" text="Bênção (Bless)"/>
-					<edit name="edt_bless" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_bless" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_bless" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_bane" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_bane" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/bane.png" hitTest="false"/>
 					<checkBox name="cbx_bane" left="30" top="3" width="150" height="24" fontSize="12" text="Perdição (Bane)"/>
-					<edit name="edt_bane" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_bane" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_bane" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_shield" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_shield" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/shield.png" hitTest="false"/>
 					<checkBox name="cbx_shield" left="30" top="3" width="150" height="24" fontSize="12" text="Escudo Arcano (Shield)"/>
-					<edit name="edt_shield" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_shield" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_shield" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_magearmor" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_magearmor" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/magearmor.png" hitTest="false"/>
 					<checkBox name="cbx_magearmor" left="30" top="3" width="150" height="24" fontSize="12" text="Armadura Arcana (Mage Armor)"/>
-					<edit name="edt_magearmor" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_magearmor" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_magearmor" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_barkskin" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_barkskin" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/barkskin.png" hitTest="false"/>
 					<checkBox name="cbx_barkskin" left="30" top="3" width="150" height="24" fontSize="12" text="Pele de Árvore (Barkskin)"/>
-					<edit name="edt_barkskin" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_barkskin" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_barkskin" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_protevil" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_protevil" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/protevil.png" hitTest="false"/>
 					<checkBox name="cbx_protevil" left="30" top="3" width="150" height="24" fontSize="12" text="Proteção contra o Mal (Prot. from Evil)"/>
-					<edit name="edt_protevil" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_protevil" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_protevil" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_enlarged" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_enlarged" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/enlarged.png" hitTest="false"/>
 					<checkBox name="cbx_enlarged" left="30" top="3" width="150" height="24" fontSize="12" text="Aumentado (Enlarge Person)"/>
-					<edit name="edt_enlarged" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_enlarged" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_enlarged" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_reduced" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_reduced" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/reduced.png" hitTest="false"/>
 					<checkBox name="cbx_reduced" left="30" top="3" width="150" height="24" fontSize="12" text="Reduzido (Reduce Person)"/>
-					<edit name="edt_reduced" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_reduced" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_reduced" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_flying" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_flying" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/flying.png" hitTest="false"/>
 					<checkBox name="cbx_flying" left="30" top="3" width="150" height="24" fontSize="12" text="Voando (Fly)"/>
-					<edit name="edt_flying" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_flying" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_flying" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_raging" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_raging" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/raging.png" hitTest="false"/>
 					<checkBox name="cbx_raging" left="30" top="3" width="150" height="24" fontSize="12" text="Em Fúria (Rage)"/>
-					<edit name="edt_raging" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_raging" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_raging" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_concentrating" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_concentrating" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/concentrating.png" hitTest="false"/>
 					<checkBox name="cbx_concentrating" left="30" top="3" width="150" height="24" fontSize="12" text="Concentrando (Concentrating)"/>
-					<edit name="edt_concentrating" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_concentrating" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_concentrating" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_mirrorimage" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_mirrorimage" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/mirrorimage.png" hitTest="false"/>
 					<checkBox name="cbx_mirrorimage" left="30" top="3" width="150" height="24" fontSize="12" text="Imagem Espelhada (Mirror Image)"/>
-					<edit name="edt_mirrorimage" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_mirrorimage" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_mirrorimage" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_hidden" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_hidden" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/hidden.png" hitTest="false"/>
 					<checkBox name="cbx_hidden" left="30" top="3" width="150" height="24" fontSize="12" text="Escondido (Hidden / Stealth)"/>
-					<edit name="edt_hidden" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_hidden" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_hidden" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_heroism" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_heroism" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/heroism.png" hitTest="false"/>
 					<checkBox name="cbx_heroism" left="30" top="3" width="150" height="24" fontSize="12" text="Heroísmo (Heroism)"/>
-					<edit name="edt_heroism" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_heroism" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_heroism" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_strength" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_strength" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/strength.png" hitTest="false"/>
 					<checkBox name="cbx_strength" left="30" top="3" width="150" height="24" fontSize="12" text="Força do Touro (Bull's Strength)"/>
-					<edit name="edt_strength" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_strength" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_strength" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_inspired" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_inspired" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/inspired.png" hitTest="false"/>
 					<checkBox name="cbx_inspired" left="30" top="3" width="150" height="24" fontSize="12" text="Inspirado (bardo) (Inspire Courage)"/>
-					<edit name="edt_inspired" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_inspired" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_inspired" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_regenerating" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_regenerating" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/regenerating.png" hitTest="false"/>
 					<checkBox name="cbx_regenerating" left="30" top="3" width="150" height="24" fontSize="12" text="Cura Acelerada (Fast Healing)"/>
-					<edit name="edt_regenerating" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_regenerating" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_regenerating" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
 				<flowLineBreak/>
-				<flowPart name="grpHdr_ff" height="30" minWidth="680" maxWidth="5000" margins="{left=4, right=4, top=8}">
+				<flowPart name="grpHdr_ff" height="30" minWidth="880" maxWidth="5000" margins="{left=4, right=4, top=8}">
 					<label align="client" text="Status - Final Fantasy d20" fontSize="15" fontStyle="bold" fontColor="#FFCC66"/>
 					<horzLine align="bottom" strokeColor="#FFCC6670"/>
 				</flowPart>
 				<flowLineBreak/>
-				<flowPart name="flp_ff_antagonized" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_antagonized" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_antagonized.png" hitTest="false"/>
 					<checkBox name="cbx_ff_antagonized" left="30" top="3" width="150" height="24" fontSize="12" text="Antagonized"/>
-					<edit name="edt_ff_antagonized" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_antagonized" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_antagonized" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_berserk" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_berserk" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_berserk.png" hitTest="false"/>
 					<checkBox name="cbx_ff_berserk" left="30" top="3" width="150" height="24" fontSize="12" text="Berserk"/>
-					<edit name="edt_ff_berserk" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_berserk" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_berserk" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_cursed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_cursed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_cursed.png" hitTest="false"/>
 					<checkBox name="cbx_ff_cursed" left="30" top="3" width="150" height="24" fontSize="12" text="Cursed"/>
-					<edit name="edt_ff_cursed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_cursed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_cursed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_dimmed" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_dimmed" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_dimmed.png" hitTest="false"/>
 					<checkBox name="cbx_ff_dimmed" left="30" top="3" width="150" height="24" fontSize="12" text="Dimmed"/>
-					<edit name="edt_ff_dimmed" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_dimmed" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_dimmed" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_deprotect" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_deprotect" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_deprotect.png" hitTest="false"/>
 					<checkBox name="cbx_ff_deprotect" left="30" top="3" width="150" height="24" fontSize="12" text="Deprotect"/>
-					<edit name="edt_ff_deprotect" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_deprotect" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_deprotect" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_deshell" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_deshell" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_deshell.png" hitTest="false"/>
 					<checkBox name="cbx_ff_deshell" left="30" top="3" width="150" height="24" fontSize="12" text="Deshell"/>
-					<edit name="edt_ff_deshell" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_deshell" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_deshell" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_doom" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_doom" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_doom.png" hitTest="false"/>
 					<checkBox name="cbx_ff_doom" left="30" top="3" width="150" height="24" fontSize="12" text="Doom"/>
-					<edit name="edt_ff_doom" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_doom" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_doom" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_drenched" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_drenched" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_drenched.png" hitTest="false"/>
 					<checkBox name="cbx_ff_drenched" left="30" top="3" width="150" height="24" fontSize="12" text="Drenched"/>
-					<edit name="edt_ff_drenched" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_drenched" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_drenched" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_frog" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_frog" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_frog.png" hitTest="false"/>
 					<checkBox name="cbx_ff_frog" left="30" top="3" width="150" height="24" fontSize="12" text="Frog"/>
-					<edit name="edt_ff_frog" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_frog" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_frog" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_frozen" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_frozen" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_frozen.png" hitTest="false"/>
 					<checkBox name="cbx_ff_frozen" left="30" top="3" width="150" height="24" fontSize="12" text="Frozen"/>
-					<edit name="edt_ff_frozen" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_frozen" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_frozen" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_immobilize" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_immobilize" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_immobilize.png" hitTest="false"/>
 					<checkBox name="cbx_ff_immobilize" left="30" top="3" width="150" height="24" fontSize="12" text="Immobilize"/>
-					<edit name="edt_ff_immobilize" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_immobilize" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_immobilize" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_imperil" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_imperil" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_imperil.png" hitTest="false"/>
 					<checkBox name="cbx_ff_imperil" left="30" top="3" width="150" height="24" fontSize="12" text="Imperil"/>
-					<edit name="edt_ff_imperil" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_imperil" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_imperil" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_mini" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_mini" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_mini.png" hitTest="false"/>
 					<checkBox name="cbx_ff_mini" left="30" top="3" width="150" height="24" fontSize="12" text="Mini"/>
-					<edit name="edt_ff_mini" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_mini" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_mini" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_sapped" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_sapped" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_sapped.png" hitTest="false"/>
 					<checkBox name="cbx_ff_sapped" left="30" top="3" width="150" height="24" fontSize="12" text="Sapped"/>
-					<edit name="edt_ff_sapped" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_sapped" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_sapped" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_silenced" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_silenced" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_silenced.png" hitTest="false"/>
 					<checkBox name="cbx_ff_silenced" left="30" top="3" width="150" height="24" fontSize="12" text="Silenced"/>
-					<edit name="edt_ff_silenced" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_silenced" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_silenced" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_squalled" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_squalled" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_squalled.png" hitTest="false"/>
 					<checkBox name="cbx_ff_squalled" left="30" top="3" width="150" height="24" fontSize="12" text="Squalled"/>
-					<edit name="edt_ff_squalled" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_squalled" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_squalled" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_static" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_static" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_static.png" hitTest="false"/>
 					<checkBox name="cbx_ff_static" left="30" top="3" width="150" height="24" fontSize="12" text="Static"/>
-					<edit name="edt_ff_static" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_static" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_static" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_stop" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_stop" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_stop.png" hitTest="false"/>
 					<checkBox name="cbx_ff_stop" left="30" top="3" width="150" height="24" fontSize="12" text="Stop"/>
-					<edit name="edt_ff_stop" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_stop" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_stop" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_weighted" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_weighted" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_weighted.png" hitTest="false"/>
 					<checkBox name="cbx_ff_weighted" left="30" top="3" width="150" height="24" fontSize="12" text="Weighted"/>
-					<edit name="edt_ff_weighted" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_weighted" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_weighted" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_zombie" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_zombie" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_zombie.png" hitTest="false"/>
 					<checkBox name="cbx_ff_zombie" left="30" top="3" width="150" height="24" fontSize="12" text="Zombie"/>
-					<edit name="edt_ff_zombie" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_zombie" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_zombie" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_float" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_float" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_float.png" hitTest="false"/>
 					<checkBox name="cbx_ff_float" left="30" top="3" width="150" height="24" fontSize="12" text="Float"/>
-					<edit name="edt_ff_float" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_float" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_float" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_protect" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_protect" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_protect.png" hitTest="false"/>
 					<checkBox name="cbx_ff_protect" left="30" top="3" width="150" height="24" fontSize="12" text="Protect"/>
-					<edit name="edt_ff_protect" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_protect" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_protect" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_shell" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_shell" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_shell.png" hitTest="false"/>
 					<checkBox name="cbx_ff_shell" left="30" top="3" width="150" height="24" fontSize="12" text="Shell"/>
-					<edit name="edt_ff_shell" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_shell" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_shell" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_reflect" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_reflect" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_reflect.png" hitTest="false"/>
 					<checkBox name="cbx_ff_reflect" left="30" top="3" width="150" height="24" fontSize="12" text="Reflect"/>
-					<edit name="edt_ff_reflect" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_reflect" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_reflect" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_regen" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_regen" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_regen.png" hitTest="false"/>
 					<checkBox name="cbx_ff_regen" left="30" top="3" width="150" height="24" fontSize="12" text="Regen"/>
-					<edit name="edt_ff_regen" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_regen" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_regen" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_reraise" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_reraise" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_reraise.png" hitTest="false"/>
 					<checkBox name="cbx_ff_reraise" left="30" top="3" width="150" height="24" fontSize="12" text="Reraise"/>
-					<edit name="edt_ff_reraise" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_reraise" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_reraise" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_haste" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_haste" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_haste.png" hitTest="false"/>
 					<checkBox name="cbx_ff_haste" left="30" top="3" width="150" height="24" fontSize="12" text="Haste"/>
-					<edit name="edt_ff_haste" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_haste" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_haste" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
-				<flowPart name="flp_ff_slow" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">
+				<flowPart name="flp_ff_slow" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">
 					<image left="2" top="3" width="24" height="24" src="/images/cond/ff_slow.png" hitTest="false"/>
 					<checkBox name="cbx_ff_slow" left="30" top="3" width="150" height="24" fontSize="12" text="Slow"/>
-					<edit name="edt_ff_slow" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<edit name="edt_ff_slow" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>
+					<comboBox name="cmbU_ff_slow" left="222" top="3" width="70" height="24" fontSize="11"
+					          items="{'rodadas', 'min', 'horas'}" values="{'r', 'min', 'h'}" value="r"/>
 				</flowPart>
 				<flowLineBreak/>
 		</flowLayout>

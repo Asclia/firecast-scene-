@@ -39,26 +39,37 @@ end;
 -- Dados
 ----------------------------------------------------------------------
 
--- "3" -> 3 rodadas, "1min" -> 10, "2h" -> 1200, "" -> nil (indefinida)
-function FSCOND.parseRounds(txt)
+-- Rodadas por unidade (Pathfinder: 1 minuto = 10 rodadas)
+FSCOND.UNIT_ROUNDS = {r = 1, min = 10, h = 600};
+
+-- Converte quantidade + unidade em rodadas.
+-- unit: "r" | "min" | "h". Um sufixo digitado no texto ("1min", "2h") tem
+-- prioridade sobre a unidade escolhida. "" -> nil (indefinida)
+function FSCOND.parseRounds(txt, unit)
 	local s = FSC.trim(txt):lower():gsub(",", ".");
 
 	if s == "" or s == "∞" then
 		return nil;
 	end;
 
-	local n, unit = s:match("^([%d%.]+)%s*(%a*)");
-	n = tonumber(n);
+	local n = tonumber(s:match("^([%d%.]+)"));
 
 	if n == nil then
 		return nil;
 	end;
 
-	if unit == "min" or unit == "m" or unit == "minuto" or unit == "minutos" then
-		n = n * 10;
-	elseif unit == "h" or unit == "hora" or unit == "horas" then
-		n = n * 600;
+	local typed = unit;
+	local suffix = s:match("^[%d%.]+%s*(%a*)");
+
+	if suffix == "min" or suffix == "m" or suffix == "minuto" or suffix == "minutos" then
+		typed = "min";
+	elseif suffix == "h" or suffix == "hora" or suffix == "horas" then
+		typed = "h";
+	elseif suffix == "r" or suffix == "rd" or suffix == "rodada" or suffix == "rodadas" then
+		typed = "r";
 	end;
+
+	n = n * (FSCOND.UNIT_ROUNDS[typed or "r"] or 1);
 
 	n = math.floor(n + 0.5);
 
@@ -67,6 +78,58 @@ function FSCOND.parseRounds(txt)
 	end;
 
 	return n;
+end;
+
+-- Unidade efetiva de uma entrada (a que o usuário escolheu)
+local function entryUnit(e)
+	local u = e.u;
+
+	if FSCOND.UNIT_ROUNDS[u] == nil then
+		u = "r";
+	end;
+
+	return u;
+end;
+
+-- Rodadas restantes expressas na unidade escolhida (para o formulário)
+function FSCOND.roundsToText(rounds, unit)
+	rounds = tonumber(rounds);
+
+	if rounds == nil then
+		return "";
+	end;
+
+	local v = rounds / (FSCOND.UNIT_ROUNDS[unit] or 1);
+
+	if math.abs(v - math.floor(v + 0.5)) < 0.001 then
+		return tostring(math.floor(v + 0.5));
+	end;
+
+	return (string.format("%.1f", v));
+end;
+
+-- Texto curto do selo no ícone: "3", "2m", "1h"
+local function badgeText(e)
+	local r = tonumber(e.r);
+	local u = entryUnit(e);
+
+	if u == "r" then
+		return tostring(r);
+	end;
+
+	return tostring(math.ceil(r / FSCOND.UNIT_ROUNDS[u])) .. ((u == "min") and "m" or "h");
+end;
+
+-- Texto da duração na lista de nomes: "3 rodadas", "1,9 min", "1 h"
+local function durationText(e)
+	local r = tonumber(e.r);
+	local u = entryUnit(e);
+
+	if u == "r" then
+		return r .. ((r == 1) and " rodada" or " rodadas");
+	end;
+
+	return (FSCOND.roundsToText(r, u):gsub("%.", ",")) .. ((u == "min") and " min" or " h");
 end;
 
 function FSCOND.getList(token)
@@ -245,11 +308,15 @@ function FSCOND.render(scene, token, list, cfg)
 
 			-- duração
 			if e.r ~= nil and e.r ~= "" then
+				local txt = badgeText(e);
 				local ds = s * 0.5;
-				local dx, dy = x + s - ds * 0.75, y + s - ds * 0.75;
-				FSC.addPathOp(canvas, PREFIX .. i .. "_db", CIRCLE, {dx, dy, dx + ds, dy + ds},
+				-- "pílula": alarga conforme o número de caracteres
+				local dw = ds + math.max(0, #txt - 1) * ds * 0.45;
+				local dx, dy = x + s + ds * 0.25 - dw, y + s - ds * 0.75;
+				local pill, _ = FSC.polysToPath({FSC.roundRectPoly((dw - ds) / 2, 0, ds / 2, 6)}, true);
+				FSC.addPathOp(canvas, PREFIX .. i .. "_db", pill, {dx, dy, dx + dw, dy + ds},
 					o({fill = "#000000E0", stroke = "#FFFFFFA0", strokeSize = 1, z = z + 2, visibility = vis}));
-				FSC.addTextOp(canvas, PREFIX .. i .. "_dt", tostring(e.r), dx + ds / 2, dy + ds * 0.1, ds * 0.8,
+				FSC.addTextOp(canvas, PREFIX .. i .. "_dt", txt, dx + dw / 2, dy + ds * 0.1, ds * 0.8,
 					o({color = "#FFFFFF", z = z + 3, visibility = vis}));
 			end;
 
@@ -257,7 +324,7 @@ function FSCOND.render(scene, token, list, cfg)
 				local nm = entryName(e);
 
 				if e.r ~= nil and e.r ~= "" then
-					nm = nm .. " " .. e.r .. "r";
+					nm = nm .. " (" .. durationText(e) .. ")";
 				end;
 
 				publicNames[#publicNames + 1] = nm;
@@ -361,7 +428,7 @@ local function mergeResult(oldList, result)
 	local list = {};
 
 	for _, r in ipairs(result.list) do
-		local rounds = FSCOND.parseRounds(r.r);
+		local rounds = FSCOND.parseRounds(r.r, r.u);
 		local old = oldById[r.id];
 		local h = result.hidden and "1" or "0";
 
@@ -369,7 +436,7 @@ local function mergeResult(oldList, result)
 			h = old.h or "0";
 		end;
 
-		list[#list + 1] = {id = r.id, r = rounds and tostring(rounds) or "", h = h};
+		list[#list + 1] = {id = r.id, r = rounds and tostring(rounds) or "", u = r.u or "r", h = h};
 	end;
 
 	for _, cu in ipairs(customs) do
@@ -397,10 +464,12 @@ function FSCOND.openFor(scene, tokens)
 	local current, customs = {}, {};
 
 	for _, e in ipairs(first) do
+		local hasDur = e.r ~= nil and e.r ~= "";
+
 		if e.id == "custom" then
-			customs[#customs + 1] = e;
+			customs[#customs + 1] = {n = e.n, d = hasDur and durationText(e) or nil};
 		else
-			current[e.id] = e;
+			current[e.id] = {r = hasDur and FSCOND.roundsToText(e.r, entryUnit(e)) or "", u = entryUnit(e)};
 		end;
 	end;
 
@@ -427,11 +496,11 @@ function FSCOND.openFor(scene, tokens)
 		end,
 
 		onAddCustom = function(cu, result)
-			local rounds = FSCOND.parseRounds(cu.r);
+			local rounds = FSCOND.parseRounds(cu.r, cu.u);
 
 			forEach(function(t, old)
 				local list = mergeResult(old, result);
-				list[#list + 1] = {id = "custom", n = cu.n:gsub("[|;]", " "), r = rounds and tostring(rounds) or "",
+				list[#list + 1] = {id = "custom", n = cu.n:gsub("[|;]", " "), r = rounds and tostring(rounds) or "", u = cu.u or "r",
 				                   c = cu.c or "#00838F", h = result.hidden and "1" or "0"};
 				FSCOND.setList(scene, t, list);
 			end);

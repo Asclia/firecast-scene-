@@ -65,17 +65,46 @@ do
 	opened.edt_blinded.text = "3"
 	opened.cbx_shaken.checked = true
 	opened.cbx_ff_haste.checked = true
-	opened.edt_ff_haste.text = "1min"
+	opened.edt_ff_haste.text = "2"
+	opened.cmbU_ff_haste.value = "min"
+	opened.cbx_shaken.checked = true
+	opened.edt_shaken.text = "1"
+	opened.cmbU_shaken.value = "h"
 	opened.cmbFilter.value = "ff"
 	opened:applyFilter()
 	assert(opened.flp_blinded.visible == false and opened.flp_ff_haste.visible == true, "filtro")
 	opened:doApply()
 	local list = FSCOND.getList(large)
 	assert(#list == 3, "3 condições, veio " .. #list)
+	local byId = {}
+	for _, e in ipairs(list) do byId[e.id] = e end
+	assert(byId.ff_haste.r == "20" and byId.ff_haste.u == "min", "2 min = 20 rodadas")
+	assert(byId.shaken.r == "600" and byId.shaken.u == "h", "1 h = 600 rodadas")
+	assert(byId.blinded.r == "3" and byId.blinded.u == "r", "3 rodadas")
+	local badge = large.canvas:findByName("fscond_" .. (function() for i, e in ipairs(list) do if e.id == "ff_haste" then return i end end end)() .. "_dt")
+	assert(badge.text == "2m", "selo em minutos: " .. tostring(badge.text))
+	-- avança 1 rodada e reabre: 19 rodadas = 1.9 min
+	FSCOND.advanceRound(scene)
+	FSCOND.openFor(scene, {large})
+	assert(opened.edt_ff_haste.text == "1.9" and opened.cmbU_ff_haste.value == "min", "reabrir em min: " .. opened.edt_ff_haste.text)
+	assert(opened.edt_shaken.text == "1.0" or opened.edt_shaken.text == "1", "hora: " .. opened.edt_shaken.text)
+	FSCOND.undoRound(scene)
+	FSCOND.openFor(scene, {large})
+	assert(opened.edt_ff_haste.text == "2", "desfazer volta a 2 min")
+	-- sufixo digitado tem prioridade sobre a unidade escolhida
+	assert(FSCOND.parseRounds("3h", "r") == 1800 and FSCOND.parseRounds("1,5", "min") == 15, "parse")
+	-- duração para todas as marcadas, com unidade
+	opened.edtAllRounds.text = "10"; opened.cmbAllUnit.value = "min"; opened:setAllRounds()
+	assert(opened.edt_blinded.text == "10" and opened.cmbU_blinded.value == "min", "duração em lote")
+	opened.edt_blinded.text = "3"; opened.cmbU_blinded.value = "r"
+	opened.edt_ff_haste.text = "2"; opened.cmbU_ff_haste.value = "min"
+	opened.edt_shaken.text = "1"; opened.cmbU_shaken.value = "h"
+	opened:doApply()
 	assert(count(large.canvas, "fscond_") > 6, "ops de condição")
 	-- personalizada
 	opened.edtCustomName.text = "Marcado pelo Inquisidor"
 	opened.edtCustomRounds.text = "2"
+	opened.cmbCustomUnit.value = "r"
 	opened.cmbCustomColor.color = "#00838F"
 	opened:doAddCustom()
 	assert(#FSCOND.getList(large) == 4, "custom")

@@ -218,7 +218,7 @@ def xml_attr(s):
 def gen_conditions_form(pdir):
     tiles = []
     for gid, gname in CD.GROUPS:
-        tiles.append('\t\t\t\t<flowPart name="grpHdr_%s" height="30" minWidth="680" maxWidth="5000" margins="{left=4, right=4, top=8}">\n'
+        tiles.append('\t\t\t\t<flowPart name="grpHdr_%s" height="30" minWidth="880" maxWidth="5000" margins="{left=4, right=4, top=8}">\n'
                      '\t\t\t\t\t<label align="client" text="%s" fontSize="15" fontStyle="bold" fontColor="#FFCC66"/>\n'
                      '\t\t\t\t\t<horzLine align="bottom" strokeColor="#FFCC6670"/>\n'
                      '\t\t\t\t</flowPart>\n\t\t\t\t<flowLineBreak/>' % (gid, xml_attr(gname)))
@@ -227,10 +227,12 @@ def gen_conditions_form(pdir):
                 continue
             label = pt if pt == en else "%s (%s)" % (pt, en)
             tiles.append(
-                '\t\t\t\t<flowPart name="flp_%(id)s" width="226" height="30" margins="{left=2, right=2, top=1, bottom=1}">\n'
+                '\t\t\t\t<flowPart name="flp_%(id)s" width="296" height="30" margins="{left=2, right=2, top=1, bottom=1}">\n'
                 '\t\t\t\t\t<image left="2" top="3" width="24" height="24" src="/images/cond/%(id)s.png" hitTest="false"/>\n'
                 '\t\t\t\t\t<checkBox name="cbx_%(id)s" left="30" top="3" width="150" height="24" fontSize="12" text="%(label)s"/>\n'
-                '\t\t\t\t\t<edit name="edt_%(id)s" left="182" top="3" width="40" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>\n'
+                '\t\t\t\t\t<edit name="edt_%(id)s" left="182" top="3" width="38" height="24" fontSize="12" textPrompt="&#8734;" horzTextAlign="center"/>\n'
+                '\t\t\t\t\t<comboBox name="cmbU_%(id)s" left="222" top="3" width="70" height="24" fontSize="11"\n'
+                '\t\t\t\t\t          items="{\'rodadas\', \'min\', \'horas\'}" values="{\'r\', \'min\', \'h\'}" value="r"/>\n'
                 '\t\t\t\t</flowPart>' % {"id": cid, "label": xml_attr(label)})
         tiles.append('\t\t\t\t<flowLineBreak/>')
 
