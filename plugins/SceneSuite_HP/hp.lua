@@ -256,7 +256,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local open = false;
 	local prefs = {bar = "1", float = true};
 	local lastUndo = nil;
-	local floater = newFloater(scene);
+	local floater = FSC.keepAlive(scene, "fshp_floater", newFloater(scene));
 
 	FSC.setupCategory(viewport, TOOL_CATEGORY, "PV rápido", 49);
 

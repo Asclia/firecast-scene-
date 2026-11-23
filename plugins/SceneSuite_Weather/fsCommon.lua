@@ -979,6 +979,17 @@ function FSC.showFormFit(viewport, frm, w, h, placement, minW, minH)
 	return viewport:showForm(frm, {placement = placement or "center"});
 end;
 
+-- Mantém uma referência forte a listeners/objetos enquanto o scene existir
+-- (a doc do newBroadcastListener exige manter a referência viva).
+FSC_KEEP = FSC_KEEP or {};
+
+function FSC.keepAlive(scene, key, obj)
+	local id = scene.objectID;
+	FSC_KEEP[id] = FSC_KEEP[id] or {};
+	FSC_KEEP[id][key] = obj;
+	return obj;
+end;
+
 -- Cria a categoria de ferramentas própria de cada plugin
 function FSC.setupCategory(viewport, name, title, order)
 	viewport:setupToolCategory(name, title, order);

@@ -79,6 +79,16 @@ PLUGINS = {
             "tool_hp": "zeromancer/heart-plus",
         },
     },
+    "SceneSuite_Combat": {
+        "tools": {
+            "tool_combat": "lorc/crossed-swords",
+            "tool_next": "lorc/sands-of-time",
+            "tool_prev": "delapouite/backward-time",
+            "tool_add": "delapouite/human-target",
+            "tool_roll": "delapouite/dice-twenty-faces-twenty",
+            "tool_end": "delapouite/broom",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",
@@ -248,6 +258,42 @@ def gen_conditions_form(pdir):
 
 
 # ---------------------------------------------------------------------------
+# Tracker de combate: janela acoplável + painel no Scene (mesmo template)
+# ---------------------------------------------------------------------------
+
+COMBAT_ROWS = 40
+
+
+def gen_combat():
+    pdir = os.path.join(PLUGINS_DIR, "SceneSuite_Combat")
+    tpl = open(os.path.join(ROOT, "tools", "templates", "frmFSCombat.lfm.tpl"), encoding="utf-8").read()
+    rows = []
+    for i in range(1, COMBAT_ROWS + 1):
+        rows.append(
+            '\t\t<layout name="row%(i)d" align="top" height="40" margins="{bottom=2, right=4}" visible="false">\n'
+            '\t\t\t<rectangle name="rowBg%(i)d" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>\n'
+            '\t\t\t<image name="rowImg%(i)d" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>\n'
+            '\t\t\t<button name="rowMenu%(i)d" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(%(i)d)"/>\n'
+            '\t\t\t<edit name="rowInit%(i)d" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(%(i)d)"/>\n'
+            '\t\t\t<label name="rowName%(i)d" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>\n'
+            '\t\t</layout>' % {"i": i})
+    body = tpl.replace("@ROWS@", "\n".join(rows)).replace("@MAX@", str(COMBAT_ROWS))
+    variants = {
+        "frmFSCombatDock.lfm": (
+            '<form name="frmFSCombatDock" formType="tablesDock" dataType="SceneSuite.Combat.Dock" title="Combate" align="client" theme="dark">',
+            "</form>", ""),
+        "frmFSCombatPanel.lfm": (
+            '<popupForm name="frmFSCombatPanel" width="300" height="420" drawContainer="true" resizable="true" placement="right" cancelable="false">',
+            "</popupForm>",
+            '<button align="right" width="28" text="X" onClick="self:doClose()"/>'),
+    }
+    for fn, (open_tag, close_tag, close_btn) in variants.items():
+        out = body.replace("@ROOT_OPEN@", open_tag).replace("@ROOT_CLOSE@", close_tag).replace("@CLOSE_BUTTON@", close_btn)
+        with open(os.path.join(pdir, fn), "w", encoding="utf-8", newline="\n") as f:
+            f.write(out)
+
+
+# ---------------------------------------------------------------------------
 # Ícones de ferramentas
 # ---------------------------------------------------------------------------
 
@@ -360,6 +406,7 @@ def package():
 def main():
     sync_common()
     gen_conditions()
+    gen_combat()
     gen_tool_icons()
     errs = validate()
     if errs:

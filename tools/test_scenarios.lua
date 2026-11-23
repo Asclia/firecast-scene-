@@ -420,3 +420,91 @@ do
 	medium.selected = false; large.selected = false
 	print("PV rápido OK")
 end
+
+------------------------------------------------------------------ Tracker de combate
+do
+	medium.image = {url = "http://exemplo/guerreiro.png"}
+	medium.name = "Guerreiro"; large.name = "Ogro"; tiny.name = "Rato"
+	-- condição de 2 rodadas no guerreiro para checar a integração
+	FSCOND.setList(scene, medium, {{id = "blinded", r = "2", u = "r", h = "0"}})
+
+	-- painel no Scene
+	tool("Combate: abrir").cb()
+	local panel = MOCK.forms.frmFSCombatPanel
+	assert(panel ~= nil, "painel")
+	assert(panel.labRound.text == "Sem combate", "sem combate: " .. panel.labRound.text)
+
+	medium.selected = true; large.selected = true
+	panel:act("addSel")
+	medium.selected = false; large.selected = false
+	tiny.selected = true; panel:act("addHidden"); tiny.selected = false
+	local st, list = FSCOMBAT.getState(scene)
+	assert(#list == 3 and st.active, "3 no combate")
+	assert(medium.userData.fsUid ~= nil, "uid estável")
+
+	-- iniciativas manuais e ordenação
+	panel.rowInit1.text = "12"; panel:rowInit(1)
+	panel.rowInit2.text = "18"; panel:rowInit(2)
+	FSCOMBAT.setMod(scene, 3, 4)
+	panel:act("roll")       -- só o rato (sem iniciativa)
+	st, list = FSCOMBAT.getState(scene)
+	assert(list[1].n == "Ogro" or list[1].i >= list[2].i, "ordenado")
+	for _, e in ipairs(list) do assert(e.i ~= nil, "todos com iniciativa") end
+	panel:refreshFromScene()
+	assert(panel.row3.visible and not panel.row4.visible, "3 linhas visíveis")
+	assert(panel.labRound.text == "Rodada 1", panel.labRound.text)
+
+	-- anel no token da vez
+	local first = FSCOMBAT.tokenMap(scene)[list[1].u]
+	assert(count(first.canvas, "fscombat_turn") == 1, "anel no primeiro")
+
+	-- jogador não vê o oculto
+	scene.isGM = false
+	local vm = FSCOMBAT.viewModel(scene)
+	assert(#vm.rows == 2, "oculto escondido do jogador")
+	panel:refreshFromScene()
+	assert(panel.flaGM.visible == false, "jogador sem controles")
+	scene.isGM = true
+
+	-- avançar turnos: ao fechar a volta, Condições desconta 1 rodada
+	panel:act("next"); panel:act("next")
+	st = FSCOMBAT.getState(scene)
+	assert(st.turn == 3 and st.round == 1)
+	panel:act("next")
+	st = FSCOMBAT.getState(scene)
+	assert(st.turn == 1 and st.round == 2, "nova rodada")
+	assert(FSCOND.getList(medium)[1].r == "1", "condição descontada pelo tracker")
+	panel:act("prev")
+	st = FSCOMBAT.getState(scene)
+	assert(st.turn == 3 and st.round == 1, "voltar turno volta rodada")
+
+	-- menu da linha (Dialogs mock escolhe a opção padrão = 1: ocultar)
+	panel:rowMenu(1)
+	panel:act("sort"); panel:act("reset")
+	FSCOMBAT.move(scene, 1, 1)
+	FSCOMBAT.removeAt(scene, 3)
+	st, list = FSCOMBAT.getState(scene)
+	assert(#list == 2, "remover")
+	panel:act("addCustom")   -- inputQuery mock devolve "" -> ignorado
+	FSCOMBAT.addCustom(scene, "Ação de covil")
+	st, list = FSCOMBAT.getState(scene)
+	assert(#list == 3, "entrada sem token")
+	panel:refreshFromScene()
+
+	-- janela acoplável encontra o scene sozinha
+	local dock = GUI.newForm("frmFSCombatDock")
+	dock:refreshFromScene()
+	assert(dock.labRound.text:find("Rodada"), "dock achou o scene: " .. dock.labRound.text)
+	dock:act("next")
+
+	-- poll detecta mudança remota
+	frames(30, 50)
+
+	-- encerrar
+	panel:act("end")
+	st, list = FSCOMBAT.getState(scene)
+	assert(#list == 0 and not st.active, "encerrado")
+	for _, t in ipairs({medium, large, tiny}) do assert(count(t.canvas, "fscombat_turn") == 0, "anéis removidos") end
+	panel:doClose()
+	print("Tracker de combate OK")
+end

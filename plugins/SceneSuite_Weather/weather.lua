@@ -596,7 +596,7 @@ end;
 
 SceneLib.registerPlugin(function(scene, attachment)
 	local viewport = scene.viewport;
-	local eng = newEngine(scene);
+	local eng = FSC.keepAlive(scene, "fsweather_engine", newEngine(scene));
 	local frm = nil;
 
 	FSC.setupCategory(viewport, TOOL_CATEGORY, "Clima", 54);

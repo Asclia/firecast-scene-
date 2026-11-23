@@ -646,6 +646,15 @@ SceneLib.registerPlugin(function(scene, attachment)
 
 	FSC.setupCategory(viewport, TOOL_CATEGORY, "Condições", 50);
 
+	-- Integração com o Tracker de Combate: ao fechar cada volta, o tracker
+	-- envia "fscond_advance". Só o cliente do mestre aplica, para não
+	-- descontar a mesma rodada várias vezes.
+	FSC.keepAlive(scene, "fscond_advance", scene:newBroadcastListener("fscond_advance", function(sender, id, msg)
+		if scene.isGM then
+			FSCOND.advanceRound(scene);
+		end;
+	end));
+
 	local function openForSelectionOr(token)
 		local sel = FSC.selectedTokens(scene);
 

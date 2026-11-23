@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ARQUIVO GERADO por tools/build.py a partir de tools/templates/frmFSCombat.lfm.tpl. Edite o template. -->
+<popupForm name="frmFSCombatPanel" width="300" height="420" drawContainer="true" resizable="true" placement="right" cancelable="false">
+
+	<script><![CDATA[
+		local scene = nil;
+		local onCloseFn = nil;
+		local loading = false;
+		local rowIdx = {};      -- linha da tela -> posição na lista do combate
+		local MAX = 40;
+
+		function self:findScene()
+			if scene ~= nil and scene.isObjectAlive then
+				return scene;
+			end;
+
+			scene = nil;
+
+			if FSCOMBAT == nil then
+				return nil;
+			end;
+
+			local mesa = nil;
+
+			pcall(function()
+				mesa = Firecast.getMesaDe(sheet or self);
+			end);
+
+			scene = FSCOMBAT.sceneForMesa(mesa);
+			return scene;
+		end;
+
+		-- painel do Scene: liga diretamente ao scene
+		function self:bindScene(sc, onClose)
+			scene = sc;
+			onCloseFn = onClose;
+			FSCOMBAT.registerView(self);
+			self:refreshFromScene();
+		end;
+
+		function self:refreshFromScene()
+			local sc = self:findScene();
+
+			loading = true;
+			self:beginUpdate();
+
+			if sc == nil then
+				self.labRound.text = "Abra o Scene desta mesa";
+				self.flaGM.visible = false;
+
+				for i = 1, MAX do
+					self["row" .. i].visible = false;
+				end;
+
+				self:endUpdate();
+				loading = false;
+				return;
+			end;
+
+			local vm = FSCOMBAT.viewModel(sc);
+
+			if vm.active and vm.count > 0 then
+				self.labRound.text = "Rodada " .. vm.round;
+			else
+				self.labRound.text = "Sem combate";
+			end;
+
+			self.flaGM.visible = vm.isGM;
+			rowIdx = {};
+
+			for i = 1, MAX do
+				local row = self["row" .. i];
+				local r = vm.rows[i];
+
+				if r == nil then
+					row.visible = false;
+				else
+					rowIdx[i] = r.idx;
+					row.visible = true;
+					local name = r.name or "?";
+
+					if r.hidden then
+						name = name .. "  (oculto)";
+					end;
+
+					self["rowName" .. i].text = name;
+					self["rowInit" .. i].text = (r.init ~= nil) and tostring(r.init) or "";
+					self["rowInit" .. i].readOnly = not r.canEdit;
+					self["rowImg" .. i].src = r.image or "";
+					self["rowMenu" .. i].visible = vm.isGM;
+
+					if r.current then
+						self["rowBg" .. i].color = "#FFD54F38";
+						self["rowBg" .. i].strokeColor = "#FFD54F";
+						self["rowBg" .. i].strokeSize = 2;
+						self["rowName" .. i].fontStyle = "bold";
+					else
+						self["rowBg" .. i].color = "#FFFFFF0D";
+						self["rowBg" .. i].strokeColor = "#00000000";
+						self["rowBg" .. i].strokeSize = 0;
+						self["rowName" .. i].fontStyle = r.hidden and "italic" or "";
+					end;
+				end;
+			end;
+
+			self:endUpdate();
+			loading = false;
+		end;
+
+		local function sc()
+			local s = self:findScene();
+
+			if s == nil then
+				showMessage("Abra o Scene desta mesa primeiro.");
+			end;
+
+			return s;
+		end;
+
+		function self:rowInit(i)
+			if loading or rowIdx[i] == nil then
+				return;
+			end;
+
+			local s = sc();
+
+			if s ~= nil then
+				FSCOMBAT.setInit(s, rowIdx[i], self["rowInit" .. i].text);
+			end;
+		end;
+
+		function self:rowMenu(i)
+			local s = sc();
+			local idx = rowIdx[i];
+
+			if s == nil or idx == nil then
+				return;
+			end;
+
+			local opts = {"Ocultar / mostrar para os jogadores", "Definir modificador de iniciativa",
+			              "Subir", "Descer", "Tornar o turno atual", "Remover do combate"};
+
+			Dialogs.choose("Ação:", opts, function(ok, k)
+				if not ok then return; end;
+
+				if k == 1 then
+					FSCOMBAT.toggleHidden(s, idx);
+				elseif k == 2 then
+					Dialogs.inputQuery("Modificador", "Modificador de iniciativa (ex.: 3 ou -1):", "0", function(v)
+						FSCOMBAT.setMod(s, idx, v);
+					end);
+				elseif k == 3 then
+					FSCOMBAT.move(s, idx, -1);
+				elseif k == 4 then
+					FSCOMBAT.move(s, idx, 1);
+				elseif k == 5 then
+					local st, list = FSCOMBAT.getState(s);
+					st.turn = idx;
+					st.active = true;
+					FSCOMBAT.save(s, st, list);
+				elseif k == 6 then
+					FSCOMBAT.removeAt(s, idx);
+				end;
+			end);
+		end;
+
+		function self:act(name)
+			local s = sc();
+
+			if s == nil then
+				return;
+			end;
+
+			if name == "next" then
+				FSCOMBAT.next(s);
+			elseif name == "prev" then
+				FSCOMBAT.prev(s);
+			elseif name == "addSel" then
+				local sel = FSC.selectedTokens(s);
+
+				if #sel == 0 then
+					showMessage("Selecione os tokens no Scene primeiro.");
+				else
+					FSCOMBAT.addTokens(s, sel, false);
+				end;
+			elseif name == "addHidden" then
+				local sel = FSC.selectedTokens(s);
+
+				if #sel == 0 then
+					showMessage("Selecione os tokens no Scene primeiro.");
+				else
+					FSCOMBAT.addTokens(s, sel, true);
+				end;
+			elseif name == "addCustom" then
+				Dialogs.inputQuery("Nova entrada", "Nome (ex.: Ação de covil):", "", function(v)
+					if v ~= nil and v:gsub("%s", "") ~= "" then
+						FSCOMBAT.addCustom(s, v);
+					end;
+				end);
+			elseif name == "roll" then
+				FSCOMBAT.roll(s, true, false);
+			elseif name == "rollAll" then
+				FSCOMBAT.roll(s, false, false);
+			elseif name == "sort" then
+				FSCOMBAT.sort(s);
+			elseif name == "reset" then
+				FSCOMBAT.resetRounds(s);
+			elseif name == "end" then
+				Dialogs.confirmYesNo("Encerrar o combate e limpar a lista?", function(yes)
+					if yes then FSCOMBAT.endCombat(s); end;
+				end);
+			end;
+		end;
+
+		function self:doClose()
+			if onCloseFn ~= nil then
+				onCloseFn();
+			end;
+		end;
+
+		if FSCOMBAT ~= nil then
+			FSCOMBAT.registerView(self);
+		end;
+	]]></script>
+
+	<!-- Cabeçalho: rodada + controles do mestre (se reorganizam conforme a largura) -->
+	<flowLayout align="top" autoHeight="true" margins="{left=4, right=4, top=4}">
+		<flowPart minWidth="150" maxWidth="5000" height="28">
+			<label name="labRound" align="client" fontSize="16" fontStyle="bold" text="Sem combate" wordWrap="false"/>
+			<button align="right" width="28" text="X" onClick="self:doClose()"/>
+		</flowPart>
+		<flowLineBreak/>
+	</flowLayout>
+
+	<flowLayout name="flaGM" align="top" autoHeight="true" margins="{left=4, right=4, bottom=4}">
+		<flowPart width="44" height="30"><button align="client" text="&#9664;" margins="{right=2}" onClick="self:act('prev')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="Próximo &#9654;" fontStyle="bold" margins="{right=2}" onClick="self:act('next')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="+ Selecion." margins="{right=2}" onClick="self:act('addSel')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="+ Ocultos" margins="{right=2}" onClick="self:act('addHidden')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="+ Entrada" margins="{right=2}" onClick="self:act('addCustom')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="Rolar faltantes" margins="{right=2}" onClick="self:act('roll')"/></flowPart>
+		<flowPart width="96" height="30"><button align="client" text="Rolar todos" margins="{right=2}" onClick="self:act('rollAll')"/></flowPart>
+		<flowPart width="70" height="30"><button align="client" text="Ordenar" margins="{right=2}" onClick="self:act('sort')"/></flowPart>
+		<flowPart width="80" height="30"><button align="client" text="Rodada 1" margins="{right=2}" onClick="self:act('reset')"/></flowPart>
+		<flowPart width="80" height="30"><button align="client" text="Encerrar" margins="{right=2}" onClick="self:act('end')"/></flowPart>
+	</flowLayout>
+
+	<scrollBox align="client" margins="{left=4, right=2, bottom=4}">
+		<layout name="row1" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg1" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg1" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu1" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(1)"/>
+			<edit name="rowInit1" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(1)"/>
+			<label name="rowName1" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row2" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg2" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg2" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu2" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(2)"/>
+			<edit name="rowInit2" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(2)"/>
+			<label name="rowName2" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row3" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg3" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg3" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu3" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(3)"/>
+			<edit name="rowInit3" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(3)"/>
+			<label name="rowName3" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row4" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg4" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg4" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu4" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(4)"/>
+			<edit name="rowInit4" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(4)"/>
+			<label name="rowName4" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row5" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg5" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg5" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu5" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(5)"/>
+			<edit name="rowInit5" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(5)"/>
+			<label name="rowName5" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row6" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg6" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg6" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu6" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(6)"/>
+			<edit name="rowInit6" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(6)"/>
+			<label name="rowName6" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row7" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg7" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg7" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu7" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(7)"/>
+			<edit name="rowInit7" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(7)"/>
+			<label name="rowName7" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row8" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg8" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg8" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu8" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(8)"/>
+			<edit name="rowInit8" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(8)"/>
+			<label name="rowName8" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row9" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg9" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg9" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu9" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(9)"/>
+			<edit name="rowInit9" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(9)"/>
+			<label name="rowName9" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row10" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg10" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg10" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu10" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(10)"/>
+			<edit name="rowInit10" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(10)"/>
+			<label name="rowName10" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row11" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg11" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg11" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu11" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(11)"/>
+			<edit name="rowInit11" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(11)"/>
+			<label name="rowName11" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row12" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg12" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg12" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu12" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(12)"/>
+			<edit name="rowInit12" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(12)"/>
+			<label name="rowName12" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row13" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg13" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg13" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu13" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(13)"/>
+			<edit name="rowInit13" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(13)"/>
+			<label name="rowName13" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row14" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg14" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg14" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu14" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(14)"/>
+			<edit name="rowInit14" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(14)"/>
+			<label name="rowName14" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row15" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg15" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg15" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu15" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(15)"/>
+			<edit name="rowInit15" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(15)"/>
+			<label name="rowName15" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row16" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg16" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg16" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu16" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(16)"/>
+			<edit name="rowInit16" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(16)"/>
+			<label name="rowName16" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row17" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg17" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg17" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu17" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(17)"/>
+			<edit name="rowInit17" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(17)"/>
+			<label name="rowName17" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row18" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg18" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg18" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu18" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(18)"/>
+			<edit name="rowInit18" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(18)"/>
+			<label name="rowName18" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row19" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg19" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg19" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu19" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(19)"/>
+			<edit name="rowInit19" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(19)"/>
+			<label name="rowName19" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row20" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg20" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg20" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu20" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(20)"/>
+			<edit name="rowInit20" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(20)"/>
+			<label name="rowName20" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row21" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg21" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg21" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu21" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(21)"/>
+			<edit name="rowInit21" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(21)"/>
+			<label name="rowName21" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row22" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg22" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg22" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu22" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(22)"/>
+			<edit name="rowInit22" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(22)"/>
+			<label name="rowName22" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row23" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg23" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg23" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu23" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(23)"/>
+			<edit name="rowInit23" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(23)"/>
+			<label name="rowName23" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row24" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg24" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg24" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu24" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(24)"/>
+			<edit name="rowInit24" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(24)"/>
+			<label name="rowName24" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row25" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg25" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg25" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu25" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(25)"/>
+			<edit name="rowInit25" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(25)"/>
+			<label name="rowName25" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row26" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg26" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg26" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu26" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(26)"/>
+			<edit name="rowInit26" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(26)"/>
+			<label name="rowName26" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row27" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg27" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg27" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu27" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(27)"/>
+			<edit name="rowInit27" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(27)"/>
+			<label name="rowName27" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row28" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg28" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg28" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu28" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(28)"/>
+			<edit name="rowInit28" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(28)"/>
+			<label name="rowName28" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row29" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg29" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg29" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu29" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(29)"/>
+			<edit name="rowInit29" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(29)"/>
+			<label name="rowName29" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row30" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg30" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg30" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu30" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(30)"/>
+			<edit name="rowInit30" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(30)"/>
+			<label name="rowName30" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row31" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg31" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg31" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu31" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(31)"/>
+			<edit name="rowInit31" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(31)"/>
+			<label name="rowName31" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row32" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg32" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg32" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu32" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(32)"/>
+			<edit name="rowInit32" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(32)"/>
+			<label name="rowName32" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row33" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg33" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg33" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu33" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(33)"/>
+			<edit name="rowInit33" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(33)"/>
+			<label name="rowName33" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row34" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg34" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg34" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu34" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(34)"/>
+			<edit name="rowInit34" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(34)"/>
+			<label name="rowName34" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row35" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg35" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg35" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu35" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(35)"/>
+			<edit name="rowInit35" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(35)"/>
+			<label name="rowName35" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row36" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg36" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg36" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu36" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(36)"/>
+			<edit name="rowInit36" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(36)"/>
+			<label name="rowName36" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row37" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg37" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg37" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu37" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(37)"/>
+			<edit name="rowInit37" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(37)"/>
+			<label name="rowName37" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row38" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg38" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg38" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu38" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(38)"/>
+			<edit name="rowInit38" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(38)"/>
+			<label name="rowName38" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row39" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg39" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg39" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu39" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(39)"/>
+			<edit name="rowInit39" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(39)"/>
+			<label name="rowName39" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="row40" align="top" height="40" margins="{bottom=2, right=4}" visible="false">
+			<rectangle name="rowBg40" align="client" color="#FFFFFF0D" xradius="5" yradius="5" strokeSize="0" hitTest="false"/>
+			<image name="rowImg40" left="3" top="3" width="34" height="34" style="proportional" hitTest="false"/>
+			<button name="rowMenu40" align="right" width="28" text="..." margins="{top=6, bottom=6, right=3}" onClick="self:rowMenu(40)"/>
+			<edit name="rowInit40" align="right" width="46" horzTextAlign="center" fontSize="14" fontStyle="bold" textPrompt="-" margins="{top=6, bottom=6, right=3}" onChange="self:rowInit(40)"/>
+			<label name="rowName40" align="client" margins="{left=42}" vertTextAlign="center" wordWrap="false" textTrimming="character"/>
+		</layout>
+	</scrollBox>
+</popupForm>

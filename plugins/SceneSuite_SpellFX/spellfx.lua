@@ -1255,7 +1255,7 @@ local KIND_HINT = {
 
 SceneLib.registerPlugin(function(scene, attachment)
 	local viewport = scene.viewport;
-	local eng = newEngine(scene);
+	local eng = FSC.keepAlive(scene, "fsfx_engine", newEngine(scene));
 	local frm = nil;
 	local cfg = nil;
 	local listeners = {};
