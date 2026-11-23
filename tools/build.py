@@ -109,6 +109,12 @@ PLUGINS = {
             "tool_request": "delapouite/dice-twenty-faces-twenty",
         },
     },
+    "SceneSuite_Levels": {
+        "tools": {
+            "tool_levels": "delapouite/stairs",
+            "tool_wall": "delapouite/stone-wall",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",

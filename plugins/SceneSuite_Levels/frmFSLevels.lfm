@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSLevels" width="320" height="330" drawContainer="true" resizable="true"
+           placement="topLeft" cancelable="true">
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+
+		function self:closeMe()
+			if options.close ~= nil then options.close(); else self:close(); end;
+		end;
+
+		-- info = {model() -> {names, active, counts}, act(name, levelIndex, text), close}
+		function self:prepareFor(info)
+			options = info or {};
+			self:refresh(nil);
+		end;
+
+		function self:refresh(keep)
+			if options.model == nil then return; end;
+			local m = options.model();
+			loading = true;
+			local items, values = {}, {};
+
+			for i, n in ipairs(m.names) do
+				local txt = i .. ". " .. n .. " (" .. (m.counts[i] or 0) .. " itens)";
+
+				if i == m.active then
+					txt = txt .. "  — ATIVO";
+				end;
+
+				items[#items + 1] = txt;
+				values[#values + 1] = tostring(i);
+			end;
+
+			self.cmbLevel.items = items;
+			self.cmbLevel.values = values;
+			self.cmbLevel.value = tostring(keep or m.active or 1);
+			self.labActive.text = (m.names[m.active] ~= nil) and ("Andar ativo: " .. m.names[m.active]) or "Nenhum andar criado.";
+			loading = false;
+		end;
+
+		function self:act(name)
+			local idx = tonumber(self.cmbLevel.value);
+
+			if options.act ~= nil then
+				options.act(name, idx, self.edtName.text or "");
+			end;
+
+			self:refresh(idx);
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="304" height="316">
+		<label left="0" top="0" width="304" height="24" fontSize="15" fontStyle="bold" text="Andares"/>
+		<label name="labActive" left="0" top="24" width="304" height="20" fontSize="12" fontColor="#FFCC66" wordWrap="false"/>
+
+		<comboBox name="cmbLevel" left="0" top="50" width="304" height="26"/>
+		<button left="0" top="82" width="150" height="28" text="Ativar este andar" fontStyle="bold" onClick="self:act('activate')"/>
+		<button left="154" top="82" width="150" height="28" text="Excluir andar" onClick="self:act('delete')"/>
+
+		<edit name="edtName" left="0" top="120" width="196" height="26" textPrompt="nome (ex.: Porão)"/>
+		<button left="200" top="120" width="104" height="26" text="+ Novo andar" onClick="self:act('add')"/>
+		<button left="200" top="150" width="104" height="26" text="Renomear" onClick="self:act('rename')"/>
+
+		<horzLine left="0" top="184" width="304" strokeColor="#FFFFFF30"/>
+		<label left="0" top="190" width="304" height="20" fontSize="11" fontColor="#B0BEC5" text="Itens selecionados no tabuleiro:"/>
+		<button left="0" top="212" width="150" height="28" text="Pôr neste andar" onClick="self:act('assign')"/>
+		<button left="154" top="212" width="150" height="28" text="Todos os andares" onClick="self:act('unassign')"/>
+		<button left="0" top="244" width="304" height="28" text="Selecionar os itens deste andar" onClick="self:act('select')"/>
+
+		<button left="204" top="282" width="100" height="28" text="Fechar" onClick="self:closeMe()"/>
+	</layout>
+	</scrollBox>
+</popupForm>

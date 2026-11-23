@@ -286,6 +286,13 @@ function FSTRIG.run(scene, trigger, actions, token)
 				local _, ft = FSC.parseDistance(a.b ~= "" and a.b or "10 ft", scene, "ft");
 				local r = (ft or 10) / FSC.feetPerSquare(scene) * cs;
 				scene:broadcastMessage("fsfx_play", {fx = FSC.trim(a.a), sx = x, sy = y - 4 * cs, tx = x, ty = y, r = r, n = 3}, true);
+			elseif a.t == "level" then
+				-- plugin Andares (se instalado)
+				if token ~= nil then
+					local yes = FSC.trim(a.b):lower();
+					scene:broadcastMessage("fslevel_token", {uid = uidOf(token), level = FSC.trim(a.a),
+					                       activate = (yes == "sim" or yes == "s" or yes == "1" or yes == "yes")}, true);
+				end;
 			elseif a.t == "message" then
 				if FSC.trim(a.a) ~= "" then
 					scene:broadcastMessage(MSG_MESSAGE, {text = a.a}, true);

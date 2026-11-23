@@ -36,7 +36,8 @@
 			condition = {"condição (ex.: Enredado, prone)", "duração em rodadas (vazio = indefinida)"},
 			damage = {"dano (ex.: 2d6+3 ou 10)", "barra (1, 2 ou 3; padrão 1)"},
 			fx = {"animação (ex.: fireball, holy_burst)", "tamanho (ex.: 10 ft)"},
-			message = {"texto da mensagem", ""}
+			message = {"texto da mensagem", ""},
+			level = {"andar (nome ou número)", "mudar andar ativo? (sim/não)"}
 		};
 
 		function self:closeMe()
@@ -143,29 +144,29 @@
 
 		<label left="0" top="166" width="60" height="26" text="Ação 1:" vertTextAlign="center" fontSize="12"/>
 		<comboBox name="cmbType1" left="64" top="166" width="360" height="26" onChange="self:updateHints()"
-		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
-		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem', 'Levar token para um andar'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message', 'level'}" value="none"/>
 		<edit name="edtA1" left="64" top="196" width="210" height="26"/>
 		<edit name="edtB1" left="278" top="196" width="146" height="26"/>
 
 		<label left="0" top="250" width="60" height="26" text="Ação 2:" vertTextAlign="center" fontSize="12"/>
 		<comboBox name="cmbType2" left="64" top="250" width="360" height="26" onChange="self:updateHints()"
-		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
-		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem', 'Levar token para um andar'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message', 'level'}" value="none"/>
 		<edit name="edtA2" left="64" top="280" width="210" height="26"/>
 		<edit name="edtB2" left="278" top="280" width="146" height="26"/>
 
 		<label left="0" top="334" width="60" height="26" text="Ação 3:" vertTextAlign="center" fontSize="12"/>
 		<comboBox name="cmbType3" left="64" top="334" width="360" height="26" onChange="self:updateHints()"
-		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
-		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem', 'Levar token para um andar'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message', 'level'}" value="none"/>
 		<edit name="edtA3" left="64" top="364" width="210" height="26"/>
 		<edit name="edtB3" left="278" top="364" width="146" height="26"/>
 
 		<label left="0" top="418" width="60" height="26" text="Ação 4:" vertTextAlign="center" fontSize="12"/>
 		<comboBox name="cmbType4" left="64" top="418" width="360" height="26" onChange="self:updateHints()"
-		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
-		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem', 'Levar token para um andar'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message', 'level'}" value="none"/>
 		<edit name="edtA4" left="64" top="448" width="210" height="26"/>
 		<edit name="edtB4" left="278" top="448" width="146" height="26"/>
 

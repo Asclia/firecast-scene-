@@ -702,3 +702,50 @@ do
 	req:closeMe(); bar:doClose()
 	print("Barra de tokens OK")
 end
+
+------------------------------------------------------------------ Andares
+do
+	scene.isGM = true
+	scene.fogOfWar.opaque = {}
+	tool("Andares: gerenciar").cb()
+	local f = MOCK.forms.frmFSLevels
+	f.edtName.text = ""; f:act("add")             -- "Térreo"
+	f.edtName.text = "Porão"; f:act("add")
+	assert(#FSLEVELS.names(scene) == 2 and FSLEVELS.active(scene) == 1, "2 andares, térreo ativo")
+	f.cmbLevel.value = "1"
+	medium.selected = true; medium.visible = true
+	f:act("assign"); medium.selected = false
+	f.cmbLevel.value = "2"
+	large.selected = true; large.visible = true
+	f:act("assign"); large.selected = false
+	assert(medium.visible == true and large.visible == false, "porão escondido")
+	-- item escondido à mão no térreo continua escondido
+	tiny.userData.fsLevel = "1"; tiny.visible = false; tiny.userData.fsLevelHid = ""
+
+	-- parede do porão
+	f.cmbLevel.value = "2"; f:act("activate")
+	assert(medium.visible == false and large.visible == true and tiny.visible == false, "porão ativo")
+	local tw = tool("Andares: arraste")
+	tw.cb()
+	local a, b = vp:worldToScreen(40, 40); local c, d = vp:worldToScreen(43, 41)
+	vp:fire("onMouseDown", {x = a, y = b, button = "left"}); vp:fire("onMouseMove", {x = c, y = d}); frames(1)
+	vp:fire("onMouseUp", {x = c, y = d, button = "left"})
+	tw.deact()
+	assert(#scene.fogOfWar.opaque == 1, "parede ativa no porão")
+	FSLEVELS.apply(scene)
+	assert(#scene.fogOfWar.opaque == 1, "reaplicar não duplica a parede")
+	f.cmbLevel.value = "1"; f:act("activate")
+	assert(#scene.fogOfWar.opaque == 0 and medium.visible == true and tiny.visible == false, "térreo: parede sai, manual continua")
+
+	-- escada via gatilho: leva o ogro para o térreo e ativa
+	FSTRIG.run(scene, {x = 0, y = 0, width = 1, height = 1}, {{t = "level", a = "térreo", b = "sim"}}, large)
+	assert(FSLEVELS.levelOf(large) == 1 and large.visible == true, "escada")
+	f.cmbLevel.value = "2"; f:act("select")
+	f.edtName.text = "Subsolo"; f:act("rename")
+	assert(FSLEVELS.names(scene)[2] == "Subsolo")
+	frames(25, 50)   -- rótulo do andar
+	f:act("delete")   -- confirmYesNo mock = sim
+	assert(#FSLEVELS.names(scene) == 1, "excluir andar")
+	f:act("unassign"); f:closeMe()
+	print("Andares OK")
+end

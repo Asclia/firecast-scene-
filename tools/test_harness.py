@@ -249,6 +249,7 @@ def run(one_based):
         "SceneSuite_Light": ["fsCommon.lua", "light.lua"],
         "SceneSuite_Triggers": ["fsCommon.lua", "triggers.lua"],
         "SceneSuite_TokenBar": ["fsCommon.lua", "tokenbar.lua"],
+        "SceneSuite_Levels": ["fsCommon.lua", "levels.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():
