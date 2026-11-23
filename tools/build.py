@@ -115,6 +115,9 @@ PLUGINS = {
             "tool_wall": "delapouite/stone-wall",
         },
     },
+    "SceneSuite_Journal": {
+        "tools": {},
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",

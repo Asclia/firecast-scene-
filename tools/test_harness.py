@@ -195,6 +195,12 @@ function MOCK.newForm(name)
   rawset(f, "show", function(self) self._shown = true end)
   return f
 end
+NDB = {perms = {}, msgs = {},
+  setPermission = function(node, kind, id, perm, allow) NDB.perms[node] = NDB.perms[node] or {}; NDB.perms[node][id] = allow end,
+  deleteNode = function(node) node._deleted = true end,
+  broadcastMessage = function(node, id, msg, loop) NDB.msgs[#NDB.msgs+1] = {id = id, msg = msg} end,
+  newBroadcastListener = function(node, id, fn) return {} end}
+Utils = {compareStringPtBr = function(a, b) if a < b then return -1 elseif a > b then return 1 end return 0 end}
 GUI = {newForm = function(name) local f = MOCK.newForm(name); local init = MOCK.formScripts[name]; assert(init, "form desconhecido " .. name); init(f); MOCK.forms[name] = f; return f end}
 MOCK.formScripts = {}
 MOCK.forms = {}
@@ -250,6 +256,7 @@ def run(one_based):
         "SceneSuite_Triggers": ["fsCommon.lua", "triggers.lua"],
         "SceneSuite_TokenBar": ["fsCommon.lua", "tokenbar.lua"],
         "SceneSuite_Levels": ["fsCommon.lua", "levels.lua"],
+        "SceneSuite_Journal": ["fsCommon.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():

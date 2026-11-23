@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Item da lista do Diário (um por entrada) -->
+<form name="frmFSJournalItem" height="46" margins="{left=2, right=2, top=1, bottom=1}">
+	<script><![CDATA[
+		local TYPE_NAMES = {quest = "Missão", npc = "NPC", location = "Local", shop = "Loja",
+		                    encounter = "Encontro", note = "Nota", lore = "História"};
+		local STATUS_NAMES = {active = "ativa", done = "concluída", failed = "falhou", hidden = "não revelada"};
+
+		function self:updateInfo()
+			if sheet == nil then return; end;
+
+			local t = TYPE_NAMES[sheet.tipo or "note"] or "Nota";
+
+			if sheet.tipo == "quest" and sheet.status ~= nil then
+				t = t .. " · " .. (STATUS_NAMES[sheet.status] or sheet.status);
+			end;
+
+			if sheet.somenteMestre == true or sheet.somenteMestre == "true" then
+				t = t .. " · oculta";
+			end;
+
+			self.labInfo.text = t;
+			self.labTitle.text = (sheet.titulo ~= nil and sheet.titulo ~= "") and sheet.titulo or "(sem título)";
+			-- fora da busca/filtro (local de cada usuário): esmaecida
+			local match = true;
+
+			if FSJOURNAL_MATCH ~= nil then
+				match = FSJOURNAL_MATCH(sheet);
+			end;
+
+			self.opacity = match and 1 or 0.35;
+		end;
+	]]></script>
+
+	<rectangle align="client" color="#FFFFFF0A" xradius="5" yradius="5" hitTest="false"/>
+	<image left="4" top="4" width="38" height="38" field="imagem" style="autoFit" hitTest="false"/>
+	<layout align="client" margins="{left=48, right=4, top=3}" hitTest="false">
+		<label name="labTitle" align="top" height="21" fontSize="13" fontStyle="bold" wordWrap="false" textTrimming="character"/>
+		<label name="labInfo" align="top" height="18" fontSize="11" fontColor="#B0BEC5" wordWrap="false" textTrimming="character"/>
+	</layout>
+
+	<dataLink fields="{'titulo', 'tipo', 'status', 'somenteMestre', 'resumo'}">
+		<event name="onChange">
+			self:updateInfo();
+		</event>
+	</dataLink>
+	<event name="onNodeReady">
+		self:updateInfo();
+	</event>
+</form>

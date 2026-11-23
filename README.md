@@ -1,6 +1,6 @@
 # Scene Suite — plugins para o Scene do Firecast
 
-Seis plugins **independentes** que ampliam o tabuleiro (Scene) do Firecast,
+Treze plugins **independentes** que ampliam o tabuleiro (Scene) do Firecast,
 pensados para Pathfinder 1e e Final Fantasy d20, mas úteis em qualquer sistema
 d20. Instale só os que quiser: cada um tem seu próprio `module.xml`/ID e não
 depende dos outros.
@@ -13,6 +13,13 @@ depende dos outros.
 | `SceneSuite_SpellAreas` — **Áreas de Magia** | Áreas de efeito digitando o tamanho em ft ou m (explosão, emanação, cilindro, cone, linha, quadrado) | Só quem cria |
 | `SceneSuite_Weather` — **Clima** | Chuva, tempestade, neve, nevasca, névoa, vendaval, areia, cinzas, folhas, noite, submerso, vaga-lumes | **Todos** que quiserem ver o efeito |
 | `SceneSuite_SpellFX` — **Animações de Magia** | 32 animações (bola de fogo, relâmpago, mísseis mágicos, raios, curas, explosões de luz...) | **Todos** que quiserem ver a animação |
+| `SceneSuite_HP` — **PV Rápido** | Painel compacto de dano/cura/PV temporário nos selecionados, com desfazer *(Always HP)* | Só quem aplica (números flutuantes: quem tem o plugin) |
+| `SceneSuite_Combat` — **Tracker de Combate** | Iniciativa com retratos (janela acoplável e/ou painel no Scene), anel no token da vez *(Combat Tracker Dock)* | Lista: quem tem o plugin; anel: todos |
+| `SceneSuite_Light` — **Luz e Visão** | Presets de luz e visão de PF1e em pés, botão acender/apagar *(Torch)* | Todos |
+| `SceneSuite_Triggers` — **Gatilhos e Portas** | Áreas que disparam ações; portas que bloqueiam a visão *(Monk's Active Tiles)* | Todos (detecção no mestre) |
+| `SceneSuite_TokenBar` — **Barra de Tokens** | Retratos dos jogadores e pedidos de rolagem com CD *(Monk's TokenBar)* | Quem tem o plugin |
+| `SceneSuite_Levels` — **Andares** | Itens e paredes por andar, troca do andar ativo *(Levels, simplificado)* | Todos |
+| `SceneSuite_Journal` — **Diário** | Janela acoplável com missões, NPCs, locais, lojas, encontros e notas *(Monk's Enhanced Journal)* | Quem tem o plugin (janela acoplável: requer assinatura) |
 
 Os quatro primeiros gravam o desenho como *operações gráficas* no próprio
 token/desenho do tabuleiro. O Firecast sincroniza isso e desenha para todo
@@ -20,10 +27,28 @@ mundo, mesmo para quem não instalou o plugin. Clima e animações são desenhad
 na tela de cada um, em tempo real. Por isso esses dois só aparecem para quem
 tem o plugin, e por isso também não bloqueiam cliques nos tokens.
 
-Cada plugin tem **seu próprio botão** na barra de ferramentas do Scene
-(Condições, Auras, Alcance, Áreas de Magia, Clima, Animações de Magia). Clicar
-no botão ativa a ferramenta principal; passar o mouse mostra só as opções
-daquele plugin.
+Cada plugin tem **seu próprio botão** na barra de ferramentas do Scene.
+Clicar no botão ativa a ferramenta principal; passar o mouse mostra só as
+opções daquele plugin. O Diário é uma janela acoplável da mesa (não fica no
+Scene).
+
+**Scene pequeno no canto da tela?** Todos os painéis se ajustam ao tamanho do
+Scene (no máximo ~92% dele), são redimensionáveis e rolam quando o conteúdo não
+cabe. Painéis em lista (Condições, Tracker, Barra de Tokens, Diário)
+reorganizam colunas conforme a largura.
+
+### Como os plugins conversam entre si
+
+Os plugins são independentes, mas se estiverem instalados juntos eles se
+integram (por mensagens do Scene; nenhum depende do outro):
+
+| De | Para | O quê |
+|---|---|---|
+| Tracker de Combate | Condições | Ao fechar cada volta, as durações descontam 1 rodada |
+| Barra de Tokens | Tracker de Combate | Iniciativa pedida cai direto na lista |
+| Gatilhos | Condições, PV Rápido, Animações, Andares | Aplicar condição, números de dano, animação, escada |
+| Áreas de Magia | Animações | "Tocar animação" ao criar a área |
+
 
 ---
 
@@ -189,6 +214,118 @@ de Gelo/Cone de Frio para *Blizzard*, Relâmpago/Convocar Relâmpagos para
 
 ---
 
+## 7. PV Rápido
+
+Botão **PV rápido** abre um painel pequeno (canto superior direito) que fica
+aberto enquanto você joga. Ele mostra os tokens selecionados com PV atual/máximo
+(barra 1 por padrão; dá para usar a 2 ou a 3). Digite o valor e:
+
+- **Dano**, **Dano ½** (resistência / Strong do FFd20, mínimo 1), **Dano ×1,5**
+  (fraqueza do FFd20);
+- **Cura** (não passa do máximo), **PV temp.** (absorve o dano primeiro; não
+  acumula, fica o maior), **Definir**;
+- **Desfazer** a última aplicação.
+
+PV negativo é permitido (morrendo, em PF). "Números no token" mostra `-12` /
+`+8` flutuando sobre o token.
+
+## 8. Tracker de Combate
+
+Duas formas de ver o mesmo combate: a **janela acoplável "Combate"** (no menu
+de janelas da mesa) ou o **painel no Scene** (botão Combate). O combate é por
+Scene: a janela acoplável mostra o Scene que estiver aberto.
+
+- Mestre: **+ Selecion.** (adiciona os tokens selecionados), **+ Ocultos**
+  (monstros que os jogadores não veem na lista), **+ Entrada** (ação de covil
+  etc.), **Rolar faltantes / todos** (d20 + modificador), **Ordenar**,
+  **Próximo / ◀**, **Rodada 1**, **Encerrar**. O botão "..." de cada linha
+  oculta/mostra, define o modificador, move, torna o turno atual ou remove.
+- O token da vez ganha um **anel dourado** no tabuleiro.
+- Jogadores podem digitar a iniciativa dos próprios tokens.
+- Ao fechar a volta (último → primeiro), o plugin de **Condições** desconta 1
+  rodada de todas as durações.
+
+## 9. Luz e Visão
+
+Clique num token com a ferramenta **Luz e visão**:
+
+- **Luz** (raio de luz normal / penumbra): vela, tocha 20/40, lamparina 15/30,
+  lanterna coberta 30/60, lanterna furta-fogo (cone 60/120), bastão solar
+  30/60, Luz 20/40, Chama Contínua 20/40, Luz do Dia 60/120, ou valores em
+  ft/m.
+- **Visão**: normal, na penumbra, no escuro 30/60/90/120 ft, cego, ou
+  personalizada. A visão só vale com a névoa de guerra ligada.
+
+**Acender/apagar nos selecionados** desliga a luz e lembra o valor; apertando
+de novo, acende com a mesma luz (ou uma tocha, se o token nunca teve luz).
+
+## 10. Gatilhos e Portas
+
+- **Gatilho** (só o mestre vê): arraste um retângulo. Defina quando dispara
+  (entrar, sair ou ambos), quem dispara (tokens de jogadores ou qualquer token),
+  se é de uso único, e até 4 ações, em ordem:
+  teletransportar para outro gatilho · mostrar / esconder um grupo · abrir /
+  fechar / alternar porta · aplicar condição (nome em português ou inglês) ·
+  causar dano (`2d6+3`, na barra escolhida) · tocar animação · mostrar
+  mensagem · levar o token para um andar.
+  **Testar** executa as ações no token selecionado; **Rearmar** reativa um
+  gatilho de uso único.
+- **Porta**: arraste um retângulo e dê um nome. Fechada, é uma parede da névoa
+  de guerra (bloqueia visão); aberta, libera. A ferramenta de edição abre/fecha
+  com um clique.
+- **Grupo**: selecione tokens/desenhos e dê um nome de grupo (ex.:
+  `emboscada`); esconda-os e use "Mostrar grupo" num gatilho.
+
+A detecção roda no computador do mestre: sem mestre conectado, nada dispara. O
+gatilho considera onde o token **parou** (passar por cima arrastando sem
+soltar não dispara).
+
+## 11. Barra de Tokens
+
+Botão **Barra de tokens**: uma faixa com os tokens dos jogadores (retrato, PV,
+número de condições). Clicar centraliza a câmera e seleciona o token.
+
+**Pedir rolagem** (mestre): Iniciativa, Fortitude, Reflexos, Vontade,
+Percepção, Furtividade, Sentir Motivação, Conhecimento, Acrobacia, Escalar ou
+outra; CD opcional; **secreta** (só o mestre vê os resultados); para os
+selecionados ou todos os jogadores. Cada jogador recebe um popup para o seu
+token, confirma o modificador (fica salvo no token) e rola. O mestre vê
+sucesso/falha; **Rolar pendentes** rola pelos ausentes com o modificador salvo.
+Iniciativa vai direto para o Tracker de Combate.
+
+O modificador é digitado porque cada ficha do Firecast usa nomes de campos
+diferentes. Quando quiser ligar à sua ficha, é só me dizer qual é.
+
+## 12. Andares
+
+Botão **Andares** (mestre): crie os andares (Térreo, Porão...), selecione
+itens no tabuleiro (fundo do mapa, desenhos, tokens) e use **Pôr neste
+andar**. **Ativar este andar** deixa o resto visível só para o mestre. Itens
+sem andar aparecem sempre; o que você escondeu à mão continua escondido.
+**Paredes do andar**: arraste retângulos que só bloqueiam a visão quando o
+andar deles está ativo. Escadas: gatilho com a ação "Levar token para um
+andar" (com "sim" no segundo campo para também trocar o andar ativo).
+
+Limite do Firecast: todos veem o mesmo andar ativo; não dá para cada jogador
+ver um andar diferente ao mesmo tempo.
+
+## 13. Diário
+
+Janela acoplável **Diário** (menu de janelas da mesa; requer assinatura do
+usuário ou do dono da mesa). Lista à esquerda (ou em cima, se a janela for
+estreita) e editor à direita:
+
+- Tipos: **Missão** (situação, quem deu, recompensa), **NPC** (raça/classe/ND,
+  atitude, onde encontrar), **Local**, **Loja** (lojista, itens e preços),
+  **Encontro** (ND, XP, tesouro, criaturas), **História** e **Nota**. Todos têm
+  imagem, título, resumo e texto formatado.
+- Busca por título/resumo/palavras-chave e filtro por tipo (inclui "Missões
+  ativas"). A busca é só sua: não muda a lista dos outros.
+- Entradas criadas pelo mestre começam **ocultas** ("Só o mestre vê"):
+  jogadores nem recebem o conteúdo. Desmarque para revelar.
+- **Mostrar aos jogadores** abre um popup com imagem, título e resumo na tela
+  de todos.
+
 ## Limitações e o que conferir no primeiro uso
 
 - Os plugins foram escritos contra a documentação e o código-fonte do SDK 3
@@ -199,8 +336,11 @@ de Gelo/Cone de Frio para *Blizzard*, Relâmpago/Convocar Relâmpagos para
   tokens.
 - Em grid hexagonal, auras e áreas usam a forma suave (a regra 5-10-5 só vale
   para grid quadrado).
-- Clima e animações dependem de cada pessoa ter o plugin. Os outros quatro
-  aparecem para todos.
+- Clima, animações, números flutuantes, listas do tracker e da barra de tokens
+  dependem de cada pessoa ter o plugin. O que é desenhado no tabuleiro
+  (condições, auras, alcance, áreas, anel do turno, gatilhos, portas, luz,
+  andares) aparece para todos.
+- O **Statblock Converter** ficou para depois, como combinado.
 
 ## Para desenvolvedores
 
@@ -214,6 +354,8 @@ tools/test_scenarios.lua   cenários do teste (formulários, cliques, quadros de
 tools/render_preview.py    gera uma imagem de como condições/auras/alcance/áreas ficam
 tools/render_fx_frames.py  gera quadros das animações e do clima
 tools/conditions_def.py    lista de condições (edite aqui para adicionar/mudar)
+tools/templates/           templates gerados pelo build (formulário de condições, tracker de combate)
+tools/new_module.py        cria o module.xml de um plugin novo
 assets/icons/              SVGs do game-icons.net usados (CC BY 3.0)
 ```
 

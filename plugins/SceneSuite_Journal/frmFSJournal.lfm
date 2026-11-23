@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Scene Suite - Diário (inspirado no "Monk's Enhanced Journal")
+  Janela acoplável da mesa. Os dados ficam no NodeDatabase desta janela
+  (compartilhado com a mesa). Entradas: missões, NPCs, locais, lojas,
+  encontros, histórias e notas. Entradas "só o mestre" não são enviadas aos
+  jogadores (permissão de leitura negada no nó).
+-->
+<form name="frmFSJournal" formType="tablesDock" dataType="SceneSuite.Journal.Dock" title="Diário"
+      align="client" theme="dark">
+
+	<script><![CDATA[
+		require("ndb.lua");
+		require("dialogs.lua");
+
+		local TYPES = {"quest", "npc", "location", "shop", "encounter", "lore", "note"};
+		local TYPE_NAMES = {quest = "Missão", npc = "NPC", location = "Local", shop = "Loja",
+		                    encounter = "Encontro", lore = "História", note = "Nota"};
+		local TYPE_ORDER = {quest = 1, npc = 2, location = 3, shop = 4, encounter = 5, lore = 6, note = 7};
+		local itemForms = {};
+		local search, typeFilter = "", "all";
+
+		local function isGM()
+			local ok, r = pcall(function()
+				local mesa = Firecast.getMesaDe(sheet);
+				return mesa ~= nil and mesa.meuJogador ~= nil and mesa.meuJogador.isMestre;
+			end);
+
+			return ok and r == true;
+		end;
+
+		-- busca local (não é gravada no nó compartilhado)
+		function FSJOURNAL_MATCH(node)
+			if node == nil then return true; end;
+
+			if typeFilter ~= "all" then
+				if typeFilter == "activeQuests" then
+					if node.tipo ~= "quest" or (node.status or "active") ~= "active" then return false; end;
+				elseif (node.tipo or "note") ~= typeFilter then
+					return false;
+				end;
+			end;
+
+			if search == "" then return true; end;
+
+			local hay = ((node.titulo or "") .. " " .. (node.resumo or "") .. " " .. (node.tags or "")):lower();
+			return hay:find(search, 1, true) ~= nil;
+		end;
+
+		function self:applySearch()
+			search = (self.edtSearch.text or ""):lower():gsub("^%s+", ""):gsub("%s+$", "");
+			typeFilter = self.cmbFilter.value or "all";
+
+			for form in pairs(itemForms) do
+				pcall(function() form:updateInfo(); end);
+			end;
+
+			self.rclEntries:sort();
+		end;
+
+		-- Mostra só os campos do tipo da entrada
+		function self:updateTypeFields()
+			local node = self.dsbEntry.node;
+			local t = (node ~= nil and node.tipo) or "note";
+
+			for _, k in ipairs(TYPES) do
+				local part = self["typeFields_" .. k];
+
+				if part ~= nil then
+					part.visible = (k == t);
+				end;
+			end;
+		end;
+
+		function self:select()
+			local node = self.rclEntries.selectedNode;
+			self.dsbEntry.node = node;
+			self.dsbEntry.visible = node ~= nil;
+			self.labEmpty.visible = node == nil;
+
+			if node ~= nil then
+				self.cbxGMOnly.checked = node.somenteMestre == true or node.somenteMestre == "true";
+				self.cbxGMOnly.visible = isGM();
+				self.btnShow.visible = isGM();
+				self.btnDelete.visible = isGM() or not self.cbxGMOnly.checked;
+				self:updateTypeFields();
+			end;
+		end;
+
+		function self:newEntry()
+			local names = {};
+
+			for _, k in ipairs(TYPES) do
+				names[#names + 1] = TYPE_NAMES[k];
+			end;
+
+			Dialogs.choose("Tipo da nova entrada:", names, function(ok, idx)
+				if not ok then return; end;
+
+				local node = self.rclEntries:append();
+
+				if node ~= nil then
+					node.tipo = TYPES[idx];
+					node.titulo = "Nova " .. TYPE_NAMES[TYPES[idx]]:lower();
+
+					if node.tipo == "quest" then
+						node.status = "active";
+					end;
+
+					-- entradas criadas pelo mestre começam ocultas (revele quando quiser)
+					if isGM() then
+						node.somenteMestre = true;
+						NDB.setPermission(node, "group", "jogadores", "read", "deny");
+						NDB.setPermission(node, "group", "espectadores", "read", "deny");
+					end;
+
+					self.rclEntries.selectedNode = node;
+					self:select();
+				end;
+			end);
+		end;
+
+		function self:toggleGMOnly()
+			local node = self.dsbEntry.node;
+
+			if node == nil or not isGM() then return; end;
+
+			local hide = self.cbxGMOnly.checked;
+			node.somenteMestre = hide;
+
+			if hide then
+				NDB.setPermission(node, "group", "jogadores", "read", "deny");
+				NDB.setPermission(node, "group", "espectadores", "read", "deny");
+			else
+				NDB.setPermission(node, "group", "jogadores", "read", nil);
+				NDB.setPermission(node, "group", "espectadores", "read", nil);
+			end;
+		end;
+
+		function self:deleteEntry()
+			local node = self.dsbEntry.node;
+
+			if node == nil then return; end;
+
+			Dialogs.confirmYesNo("Excluir \"" .. (node.titulo or "") .. "\"?", function(yes)
+				if yes then
+					NDB.deleteNode(node);
+					self.rclEntries.selectedNode = nil;
+					self:select();
+				end;
+			end);
+		end;
+
+		-- mostra imagem + título + resumo num popup para todos os jogadores
+		function self:showToPlayers()
+			local node = self.dsbEntry.node;
+
+			if node == nil or sheet == nil then return; end;
+
+			NDB.broadcastMessage(sheet, "fsjournal_show",
+				{titulo = node.titulo or "", imagem = node.imagem or "", resumo = node.resumo or ""}, true);
+		end;
+
+		-- Layout responsivo: lista ao lado (largo) ou em cima (estreito)
+		function self:relayout()
+			local w = self.width or 600;
+
+			if w < 560 then
+				self.layList.align = "top";
+				self.layList.height = math.max(140, math.floor((self.height or 500) * 0.38));
+			else
+				self.layList.align = "left";
+				self.layList.width = math.max(200, math.min(300, math.floor(w * 0.34)));
+			end;
+		end;
+	]]></script>
+
+	<event name="onNodeReady">
+		if sheet ~= nil and self.__showListener == nil then
+			self.__showListener = NDB.newBroadcastListener(sheet, "fsjournal_show", function(sender, id, msg)
+				if type(msg) ~= "table" then return; end;
+				local frm = GUI.newForm("frmFSJournalShow");
+				frm:showEntry(msg);
+				frm:show();
+			end);
+		end;
+
+		self:relayout();
+		self:select();
+	</event>
+
+	<event name="onResize">
+		self:relayout();
+	</event>
+
+	<!-- Barra superior: busca, filtro, nova entrada -->
+	<flowLayout align="top" autoHeight="true" margins="{left=4, right=4, top=4, bottom=2}">
+		<flowPart minWidth="150" maxWidth="400" height="30">
+			<edit name="edtSearch" align="client" textPrompt="Buscar..." margins="{right=4}" onChange="self:applySearch()"/>
+		</flowPart>
+		<flowPart width="170" height="30">
+			<comboBox name="cmbFilter" align="client" margins="{right=4}" onChange="self:applySearch()"
+			          items="{'Tudo', 'Missões ativas', 'Missões', 'NPCs', 'Locais', 'Lojas', 'Encontros', 'Histórias', 'Notas'}"
+			          values="{'all', 'activeQuests', 'quest', 'npc', 'location', 'shop', 'encounter', 'lore', 'note'}" value="all"/>
+		</flowPart>
+		<flowPart width="110" height="30">
+			<button align="client" text="+ Nova" fontStyle="bold" onClick="self:newEntry()"/>
+		</flowPart>
+	</flowLayout>
+
+	<layout name="layList" align="left" width="250" margins="{left=4, right=4, bottom=4}">
+		<recordList name="rclEntries" align="client" field="entradas" templateForm="frmFSJournalItem"
+		            selectable="true" layout="vertical">
+			<event name="onSelect">
+				self:select();
+			</event>
+			<event name="onItemAdded">
+				itemForms[form] = true;
+			</event>
+			<event name="onItemRemoved">
+				itemForms[form] = nil;
+			</event>
+			<event name="onCompare"><![CDATA[
+				-- busca primeiro, depois tipo, depois título
+				local ma, mb = FSJOURNAL_MATCH(nodeA), FSJOURNAL_MATCH(nodeB);
+
+				if ma ~= mb then
+					return ma and -1 or 1;
+				end;
+
+				local ta, tb = TYPE_ORDER[nodeA.tipo or "note"] or 9, TYPE_ORDER[nodeB.tipo or "note"] or 9;
+
+				if ta ~= tb then
+					return (ta < tb) and -1 or 1;
+				end;
+
+				return Utils.compareStringPtBr(nodeA.titulo or "", nodeB.titulo or "");
+			]]></event>
+		</recordList>
+	</layout>
+
+	<label name="labEmpty" align="client" text="Selecione uma entrada ou crie uma nova." fontColor="#B0BEC5"
+	       horzTextAlign="center" vertTextAlign="center"/>
+
+	<!-- Editor da entrada selecionada -->
+	<dataScopeBox name="dsbEntry" align="client" visible="false" margins="{right=4, bottom=4}">
+		<flowLayout align="top" autoHeight="true">
+			<flowPart width="92" height="92">
+				<image align="client" field="imagem" editable="true" style="autoFit" margins="{right=6}"
+				       hint="Clique para escolher uma imagem"/>
+			</flowPart>
+			<flowPart minWidth="200" maxWidth="5000" height="92">
+				<edit align="top" height="30" field="titulo" fontSize="16" fontStyle="bold" textPrompt="Título"/>
+				<layout align="top" height="30" margins="{top=4}">
+					<comboBox align="left" width="130" field="tipo"
+					          items="{'Missão', 'NPC', 'Local', 'Loja', 'Encontro', 'História', 'Nota'}"
+					          values="{'quest', 'npc', 'location', 'shop', 'encounter', 'lore', 'note'}"/>
+					<checkBox name="cbxGMOnly" align="left" width="130" text="Só o mestre vê" margins="{left=6}"
+					          onChange="self:toggleGMOnly()"/>
+				</layout>
+				<layout align="top" height="26" margins="{top=2}">
+					<button name="btnDelete" align="right" width="80" text="Excluir" onClick="self:deleteEntry()"/>
+					<button name="btnShow" align="right" width="150" text="Mostrar aos jogadores" margins="{right=4}"
+					        onClick="self:showToPlayers()"/>
+				</layout>
+			</flowPart>
+			<flowLineBreak/>
+
+			<!-- Campos por tipo -->
+			<flowPart name="typeFields_quest" minWidth="200" maxWidth="5000" height="64">
+				<layout align="top" height="30">
+					<label align="left" width="70" text="Situação:" vertTextAlign="center"/>
+					<comboBox align="left" width="140" field="status"
+					          items="{'Ativa', 'Concluída', 'Falhou', 'Não revelada'}" values="{'active', 'done', 'failed', 'hidden'}"/>
+					<edit align="client" field="doador" textPrompt="Quem deu a missão" margins="{left=6}"/>
+				</layout>
+				<edit align="top" height="30" field="recompensa" textPrompt="Recompensa" margins="{top=2}"/>
+			</flowPart>
+			<flowPart name="typeFields_npc" minWidth="200" maxWidth="5000" height="64">
+				<layout align="top" height="30">
+					<edit align="left" width="180" field="racaClasse" textPrompt="Raça / classe / ND"/>
+					<comboBox align="client" field="atitude" margins="{left=6}"
+					          items="{'Hostil', 'Inamistoso', 'Indiferente', 'Amistoso', 'Prestativo'}"
+					          values="{'hostile', 'unfriendly', 'indifferent', 'friendly', 'helpful'}"/>
+				</layout>
+				<edit align="top" height="30" field="localNPC" textPrompt="Onde encontrar" margins="{top=2}"/>
+			</flowPart>
+			<flowPart name="typeFields_location" minWidth="200" maxWidth="5000" height="32">
+				<edit align="top" height="30" field="regiao" textPrompt="Região / reino / plano"/>
+			</flowPart>
+			<flowPart name="typeFields_shop" minWidth="200" maxWidth="5000" height="64">
+				<edit align="top" height="30" field="lojista" textPrompt="Lojista"/>
+				<edit align="top" height="30" field="estoque" textPrompt="Itens: nome — preço; nome — preço" margins="{top=2}"/>
+			</flowPart>
+			<flowPart name="typeFields_encounter" minWidth="200" maxWidth="5000" height="64">
+				<layout align="top" height="30">
+					<edit align="left" width="90" field="nd" textPrompt="ND"/>
+					<edit align="left" width="110" field="xp" textPrompt="XP" margins="{left=6}"/>
+					<edit align="client" field="tesouro" textPrompt="Tesouro" margins="{left=6}"/>
+				</layout>
+				<edit align="top" height="30" field="criaturas" textPrompt="Criaturas (ex.: 3 goblins, 1 worg)" margins="{top=2}"/>
+			</flowPart>
+			<flowPart name="typeFields_lore" minWidth="200" maxWidth="5000" height="32">
+				<edit align="top" height="30" field="tags" textPrompt="Palavras-chave (para a busca)"/>
+			</flowPart>
+			<flowPart name="typeFields_note" minWidth="200" maxWidth="5000" height="32">
+				<edit align="top" height="30" field="tags" textPrompt="Palavras-chave (para a busca)"/>
+			</flowPart>
+			<flowLineBreak/>
+
+			<flowPart minWidth="200" maxWidth="5000" height="32">
+				<edit align="top" height="30" field="resumo" textPrompt="Resumo (aparece ao mostrar aos jogadores)"/>
+			</flowPart>
+		</flowLayout>
+
+		<richEdit align="client" field="texto" backgroundColor="#2B2B2B" defaultFontColor="white" defaultFontSize="13"
+		          margins="{top=4}"/>
+
+		<dataLink field="tipo">
+			<event name="onChange">
+				self:updateTypeFields();
+			</event>
+		</dataLink>
+	</dataScopeBox>
+</form>

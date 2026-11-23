@@ -749,3 +749,45 @@ do
 	f:act("unassign"); f:closeMe()
 	print("Andares OK")
 end
+
+------------------------------------------------------------------ Diário
+do
+	local f = GUI.newForm("frmFSJournal")
+	-- mocks mínimos: recordList com nós em memória
+	local nodes = {}
+	f.rclEntries.append = function(self) local n = {}; nodes[#nodes + 1] = n; return n end
+	f.rclEntries.sort = function(self) end
+	_G.sheet = {}
+	f.width, f.height = 900, 600
+	f:relayout()
+	assert(f.layList.align == "left", "largo: lista ao lado")
+	f.width = 400; f:relayout()
+	assert(f.layList.align == "top", "estreito: lista em cima")
+
+	f:newEntry()   -- Dialogs mock escolhe o 1º tipo (Missão)
+	local q = nodes[1]
+	assert(q.tipo == "quest" and q.status == "active", "nova missão")
+	assert(f.dsbEntry.node == q and f.typeFields_quest.visible and not f.typeFields_npc.visible, "campos por tipo")
+	q.titulo = "Resgatar o ferreiro"; q.resumo = "Ele foi levado por goblins"
+	-- só o mestre (o mock de mesa não é mestre -> nada muda)
+	f.cbxGMOnly.checked = true; f:toggleGMOnly()
+	-- busca local
+	f.edtSearch.text = "GOBLINS"; f.cmbFilter.value = "all"; f:applySearch()
+	assert(FSJOURNAL_MATCH(q) == true, "busca encontra pelo resumo")
+	f.edtSearch.text = "dragão"; f:applySearch()
+	assert(FSJOURNAL_MATCH(q) == false, "busca não encontra")
+	f.edtSearch.text = ""; f.cmbFilter.value = "activeQuests"; f:applySearch()
+	assert(FSJOURNAL_MATCH(q) == true and FSJOURNAL_MATCH({tipo = "npc"}) == false, "filtro missões ativas")
+	q.status = "done"
+	assert(FSJOURNAL_MATCH(q) == false, "concluída sai do filtro")
+	f:showToPlayers()
+	assert(NDB.msgs[#NDB.msgs].id == "fsjournal_show" and NDB.msgs[#NDB.msgs].msg.titulo == "Resgatar o ferreiro", "mostrar aos jogadores")
+	local show = GUI.newForm("frmFSJournalShow"); show:showEntry(NDB.msgs[#NDB.msgs].msg)
+	assert(show.labTitle.text == "Resgatar o ferreiro")
+	local item = GUI.newForm("frmFSJournalItem")
+	rawset(item, "sheet", nil)
+	f:deleteEntry()
+	assert(q._deleted, "excluir")
+	_G.sheet = nil
+	print("Diário OK")
+end
