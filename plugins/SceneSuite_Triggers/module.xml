@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.Triggers</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Gatilhos e Portas</name>
+        <description>Áreas-gatilho que teletransportam, mostram/escondem grupos, abrem portas, aplicam condições, causam dano, tocam animações ou mostram mensagens; portas que bloqueiam a visão.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

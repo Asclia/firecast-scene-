@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSTrigger" width="440" height="560" drawContainer="true" resizable="true"
+           placement="center" cancelable="true">
+
+	<style>
+		label.cap {
+			width: 100;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+			fontSize: 12;
+		}
+		label.hint {
+			height: 18;
+			fontSize: 10;
+			fontColor: #B0BEC5;
+			wordWrap: false;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+		local SLOTS = 4;
+
+		-- dica de cada parâmetro por tipo de ação
+		local HINTS = {
+			none = {"", ""},
+			teleport = {"nome do gatilho de destino", ""},
+			show = {"nome do grupo a mostrar", ""},
+			hide = {"nome do grupo a esconder", ""},
+			door_open = {"nome da porta", ""},
+			door_close = {"nome da porta", ""},
+			door_toggle = {"nome da porta", ""},
+			condition = {"condição (ex.: Enredado, prone)", "duração em rodadas (vazio = indefinida)"},
+			damage = {"dano (ex.: 2d6+3 ou 10)", "barra (1, 2 ou 3; padrão 1)"},
+			fx = {"animação (ex.: fireball, holy_burst)", "tamanho (ex.: 10 ft)"},
+			message = {"texto da mensagem", ""}
+		};
+
+		function self:closeMe()
+			if options.close ~= nil then options.close(); else self:close(); end;
+		end;
+
+		function self:updateHints()
+			for i = 1, SLOTS do
+				local h = HINTS[self["cmbType" .. i].value or "none"] or HINTS.none;
+				self["edtA" .. i].textPrompt = h[1];
+				self["edtB" .. i].textPrompt = h[2];
+				self["edtA" .. i].enabled = h[1] ~= "";
+				self["edtB" .. i].enabled = h[2] ~= "";
+			end;
+		end;
+
+		-- info = {cfg = {...}, actions = {...}, onSave(cfg, actions), onDelete(), onReset(), close}
+		function self:prepareFor(info)
+			options = info or {};
+			loading = true;
+			local c = options.cfg or {};
+			self.edtName.text = c.name or "";
+			self.cmbEvent.value = c.event or "enter";
+			self.cmbWho.value = c.who or "players";
+			self.cbxOnce.checked = c.once == "1";
+			self.cbxEnabled.checked = c.enabled ~= "0";
+			self.labUsed.text = (c.used == "1") and "Já disparou (uso único)." or "";
+
+			for i = 1, SLOTS do
+				local a = (options.actions or {})[i] or {};
+				self["cmbType" .. i].value = a.t or "none";
+				self["edtA" .. i].text = a.a or "";
+				self["edtB" .. i].text = a.b or "";
+			end;
+
+			loading = false;
+			self:updateHints();
+		end;
+
+		function self:collect()
+			local cfg = {
+				name = self.edtName.text or "",
+				event = self.cmbEvent.value or "enter",
+				who = self.cmbWho.value or "players",
+				once = self.cbxOnce.checked and "1" or "0",
+				enabled = self.cbxEnabled.checked and "1" or "0"
+			};
+			local actions = {};
+
+			for i = 1, SLOTS do
+				local t = self["cmbType" .. i].value or "none";
+
+				if t ~= "none" then
+					actions[#actions + 1] = {t = t, a = self["edtA" .. i].text or "", b = self["edtB" .. i].text or ""};
+				end;
+			end;
+
+			return cfg, actions;
+		end;
+
+		function self:doSave()
+			if options.onSave ~= nil then
+				options.onSave(self:collect());
+			end;
+
+			self:closeMe();
+		end;
+
+		function self:doTest()
+			if options.onTest ~= nil then
+				options.onTest(self:collect());
+			end;
+		end;
+
+		function self:doReset()
+			if options.onReset ~= nil then options.onReset(); end;
+			self.labUsed.text = "";
+		end;
+
+		function self:doDelete()
+			if options.onDelete ~= nil then options.onDelete(); end;
+			self:closeMe();
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="424" height="546">
+		<label left="0" top="0" width="424" height="24" fontSize="15" fontStyle="bold" text="Gatilho"/>
+
+		<label class="cap" left="0" top="30" text="Nome:"/>
+		<edit name="edtName" left="104" top="30" width="320" height="26" textPrompt="Ex.: Armadilha do corredor"/>
+
+		<label class="cap" left="0" top="62" text="Dispara:"/>
+		<comboBox name="cmbEvent" left="104" top="62" width="150" height="26"
+		          items="{'Ao entrar', 'Ao sair', 'Ao entrar e ao sair'}" values="{'enter', 'leave', 'both'}" value="enter"/>
+		<comboBox name="cmbWho" left="260" top="62" width="164" height="26"
+		          items="{'Tokens de jogadores', 'Qualquer token'}" values="{'players', 'any'}" value="players"/>
+
+		<checkBox name="cbxOnce" left="104" top="94" width="150" height="24" fontSize="12" text="Só uma vez"/>
+		<checkBox name="cbxEnabled" left="260" top="94" width="164" height="24" fontSize="12" text="Ativo" checked="true"/>
+		<label name="labUsed" left="104" top="118" width="320" height="18" fontSize="10" fontColor="#FFCC66"/>
+
+		<label left="0" top="140" width="424" height="22" fontSize="14" fontStyle="bold" fontColor="#FFCC66" text="Ações (em ordem)"/>
+
+		<label left="0" top="166" width="60" height="26" text="Ação 1:" vertTextAlign="center" fontSize="12"/>
+		<comboBox name="cmbType1" left="64" top="166" width="360" height="26" onChange="self:updateHints()"
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		<edit name="edtA1" left="64" top="196" width="210" height="26"/>
+		<edit name="edtB1" left="278" top="196" width="146" height="26"/>
+
+		<label left="0" top="250" width="60" height="26" text="Ação 2:" vertTextAlign="center" fontSize="12"/>
+		<comboBox name="cmbType2" left="64" top="250" width="360" height="26" onChange="self:updateHints()"
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		<edit name="edtA2" left="64" top="280" width="210" height="26"/>
+		<edit name="edtB2" left="278" top="280" width="146" height="26"/>
+
+		<label left="0" top="334" width="60" height="26" text="Ação 3:" vertTextAlign="center" fontSize="12"/>
+		<comboBox name="cmbType3" left="64" top="334" width="360" height="26" onChange="self:updateHints()"
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		<edit name="edtA3" left="64" top="364" width="210" height="26"/>
+		<edit name="edtB3" left="278" top="364" width="146" height="26"/>
+
+		<label left="0" top="418" width="60" height="26" text="Ação 4:" vertTextAlign="center" fontSize="12"/>
+		<comboBox name="cmbType4" left="64" top="418" width="360" height="26" onChange="self:updateHints()"
+		          items="{'(nenhuma)', 'Teletransportar para outro gatilho', 'Mostrar grupo', 'Esconder grupo', 'Abrir porta', 'Fechar porta', 'Alternar porta', 'Aplicar condição', 'Causar dano', 'Tocar animação', 'Mostrar mensagem'}"
+		          values="{'none', 'teleport', 'show', 'hide', 'door_open', 'door_close', 'door_toggle', 'condition', 'damage', 'fx', 'message'}" value="none"/>
+		<edit name="edtA4" left="64" top="448" width="210" height="26"/>
+		<edit name="edtB4" left="278" top="448" width="146" height="26"/>
+
+		<button left="0" top="508" width="80" height="30" text="Excluir" onClick="self:doDelete()"/>
+		<button left="84" top="508" width="96" height="30" text="Rearmar" onClick="self:doReset()"/>
+		<button left="184" top="508" width="72" height="30" text="Testar" onClick="self:doTest()"/>
+		<button left="260" top="508" width="78" height="30" text="Cancelar" onClick="self:closeMe()"/>
+		<button left="342" top="508" width="82" height="30" text="Salvar" fontStyle="bold" onClick="self:doSave()"/>
+	</layout>
+	</scrollBox>
+</popupForm>

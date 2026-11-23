@@ -540,3 +540,98 @@ do
 	local t = tool("Luz e visão: clique"); t.cb(); click(medium.x + 0.1, medium.y + 0.1); t.deact()
 	print("Luz e visão OK")
 end
+
+------------------------------------------------------------------ Gatilhos e portas
+do
+	scene.isGM = true
+	local function drag(tl, x1, y1, x2, y2, extra)
+		local a, b = vp:worldToScreen(x1, y1)
+		local c, d = vp:worldToScreen(x2, y2)
+		vp:fire("onMouseDown", {x = a, y = b, button = "left"})
+		vp:fire("onMouseMove", {x = c, y = d})
+		frames(1)
+		vp:fire("onMouseUp", {x = c, y = d, button = "left"})
+	end
+
+	-- porta
+	local tDoor = tool("Portas: arraste")
+	tDoor.cb()
+	drag(tDoor, 15, 15, 16.5, 18)   -- inputQuery mock devolve "Porta"
+	tDoor.deact()
+	local door = FSTRIG.findByName(scene, "door", "Porta")
+	assert(door ~= nil and #scene.fogOfWar.opaque == 1, "porta fechada = parede")
+
+	-- gatilho de destino e gatilho com ações
+	local tTrig = tool("Gatilhos: arraste")
+	tTrig.cb()
+	drag(tTrig, 30, 30, 33, 33)
+	local dest = scene._items[#scene._items]
+	assert(FSTRIG.isTrigger(dest) and dest.visible == false, "gatilho só para o mestre")
+	local f = MOCK.forms.frmFSTrigger
+	f.edtName.text = "Saída"; f:doSave()
+
+	drag(tTrig, 4.5, 4.5, 6, 6)         -- área sob o token médio (4.5..6)
+	f.edtName.text = "Armadilha"
+	f.cmbWho.value = "any"
+	f.cmbType1.value = "damage"; f.edtA1.text = "2d6+3"; f.edtB1.text = "1"
+	f.cmbType2.value = "condition"; f.edtA2.text = "Enredado"; f.edtB2.text = "3"
+	f.cmbType3.value = "door_open"; f.edtA3.text = "porta"
+	f.cmbType4.value = "teleport"; f.edtA4.text = "saída"
+	f:updateHints()
+	assert(f.edtB2.textPrompt:find("rodadas"), "dica por tipo")
+	f.cbxOnce.checked = true
+	f:doSave()
+	tTrig.deact()
+	local trap = FSTRIG.findByName(scene, "trigger", "Armadilha")
+
+	-- grupo escondido que outro gatilho vai mostrar
+	tiny.selected = true
+	tool("Gatilhos: dar nome").cb()   -- inputQuery mock devolve o valor atual ("")
+	tiny.selected = false
+	tiny.userData.fsGroup = "emboscada"; tiny.visible = false
+	FSTRIG.run(scene, trap, {{t = "show", a = "Emboscada"}}, nil)
+	assert(tiny.visible == true, "mostrar grupo")
+	FSTRIG.run(scene, trap, {{t = "hide", a = "emboscada"}}, nil)
+	assert(tiny.visible == false, "esconder grupo")
+
+	-- token entra na armadilha
+	medium.barValue1 = "30"
+	medium.x, medium.y = 20, 20
+	medium:fire("onBoundsChange", medium); MOCK.runTimers()     -- fora
+	medium.x, medium.y = 4.6, 4.6
+	medium:fire("onBoundsChange", medium); MOCK.runTimers()     -- entra
+	local hp = tonumber(medium.barValue1)
+	assert(hp <= 25 and hp >= 15, "dano 2d6+3: " .. medium.barValue1)
+	local hasEnredado = false
+	for _, e in ipairs(FSCOND.getList(medium)) do if e.id == "entangled" and e.r == "3" then hasEnredado = true end end
+	assert(hasEnredado, "condição aplicada via gatilho")
+	assert(#scene.fogOfWar.opaque == 0, "porta aberta")
+	local cx, cy = medium:getCenter()
+	assert(cx > 30 and cx < 33 and cy > 30 and cy < 33, "teletransportado: " .. cx .. "," .. cy)
+	MOCK.runTimers()
+	-- só uma vez: voltar não dispara de novo
+	medium.barValue1 = "30"
+	medium.x, medium.y = 20, 20; medium:fire("onBoundsChange", medium); MOCK.runTimers()
+	medium.x, medium.y = 4.6, 4.6; medium:fire("onBoundsChange", medium); MOCK.runTimers()
+	assert(medium.barValue1 == "30", "uso único")
+
+	-- editar: alternar porta e rearmar/testar gatilho
+	local tEdit = tool("Gatilhos: clique")
+	tEdit.cb()
+	click(door.x + 0.2, door.y + 0.2)
+	assert(#scene.fogOfWar.opaque == 1, "porta fechada pelo clique")
+	click(trap.x + 0.2, trap.y + 0.2)
+	f:doReset(); f:doTest()
+	f.cmbType1.value = "message"; f.edtA1.text = "Você ouve um clique..."
+	f.cmbType2.value = "fx"; f.edtA2.text = "fireball"; f.edtB2.text = "10 ft"
+	f:doTest()
+	frames(60, 25)
+	tEdit.deact()
+	-- jogador não dispara nada (detecção só no mestre)
+	scene.isGM = false
+	medium.x, medium.y = 20, 20; medium:fire("onBoundsChange", medium); MOCK.runTimers()
+	scene.isGM = true
+	assert(FSTRIG.rollDice("3d1+2") == 5 and FSTRIG.rollDice("10") == 10 and FSTRIG.rollDice("abc") == nil, "dados")
+	f:doDelete()
+	print("Gatilhos OK")
+end

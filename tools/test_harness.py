@@ -115,6 +115,7 @@ local function newItem(scene, kind, x, y, w, h)
   function it:beginUpdate() end
   function it:endUpdate() end
   function it:getCenter() return self.x + self.width / 2, self.y + self.height / 2 end
+  function it:setCenter(cx, cy) self.x = cx - self.width / 2; self.y = cy - self.height / 2; self:fire("onBoundsChange", self) end
   function it:markAsMyDrawing() end
   function it:delete() for i, o in ipairs(scene._items) do if o == self then table.remove(scene._items, i) break end end self.isObjectAlive = false end
   return it
@@ -155,6 +156,9 @@ function MOCK.newScene()
   vp.fillText = function(self, x, y, txt, op) assert(self._fill, "fillText sem prepareFill"); num(x, "tx"); num(y, "ty"); assert(type(txt) == "string"); if op then num(op, "op"); assert(op >= 0 and op <= 1.0001, "opacity texto " .. op) end self.draws = self.draws + 1 end
   vp.fillACell = function(self, i, j, op) num(i, "i"); num(j, "j"); self.draws = self.draws + 1 end
 
+  scene.fogOfWar = {opaque = {},
+    addOpaqueArea = function(self, poly) assert(#poly >= 3); for _, p in ipairs(poly) do num(p.x, "fow.x"); num(p.y, "fow.y") end; self.opaque[#self.opaque+1] = poly end,
+    removeOpaqueArea = function(self, poly) assert(#poly >= 3); for i, p in ipairs(self.opaque) do if p[1].x == poly[1].x and p[1].y == poly[1].y then table.remove(self.opaque, i) return end end end}
   local items = makeListenable({})
   scene.items = items
   setmetatable(items, {__len = function() return #scene._items end,
@@ -242,6 +246,7 @@ def run(one_based):
         "SceneSuite_HP": ["fsCommon.lua", "hp.lua"],
         "SceneSuite_Combat": ["fsCommon.lua", "combat.lua"],
         "SceneSuite_Light": ["fsCommon.lua", "light.lua"],
+        "SceneSuite_Triggers": ["fsCommon.lua", "triggers.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():

@@ -594,6 +594,49 @@ function FSCOND.undoRound(scene)
 	undoSnapshots[scene.objectID] = nil;
 end;
 
+-- Procura uma condição pelo id, nome em português ou nome original (inglês)
+function FSCOND.findDef(text)
+	local q = FSC.trim(text):lower();
+
+	if q == "" then
+		return nil;
+	end;
+
+	for _, c in ipairs(FSCOND_DATA.list) do
+		if c.group ~= "hidden" and (c.id == q or c.name:lower() == q or (c.en or ""):lower() == q) then
+			return c;
+		end;
+	end;
+
+	return nil;
+end;
+
+-- Adiciona (ou atualiza) uma condição num token; usado pelos Gatilhos.
+-- Nome desconhecido vira condição personalizada.
+function FSCOND.applyByName(scene, token, text, roundsTxt)
+	local def = FSCOND.findDef(text);
+	local rounds = FSCOND.parseRounds(roundsTxt or "", "r");
+	local list = FSCOND.getList(token);
+	local entry;
+
+	if def ~= nil then
+		for _, e in ipairs(list) do
+			if e.id == def.id then entry = e; end;
+		end;
+
+		if entry == nil then
+			entry = {id = def.id, h = "0", u = "r"};
+			list[#list + 1] = entry;
+		end;
+	else
+		entry = {id = "custom", n = FSC.trim(text):gsub("[|;]", " "), c = "#00838F", h = "0", u = "r"};
+		list[#list + 1] = entry;
+	end;
+
+	entry.r = rounds and tostring(rounds) or "";
+	FSCOND.setList(scene, token, list);
+end;
+
 function FSCOND.rerenderAll(scene)
 	local cfg = FSCOND.getCfg(scene);
 
@@ -645,6 +688,22 @@ SceneLib.registerPlugin(function(scene, attachment)
 	local lstMouseDown = nil;
 
 	FSC.setupCategory(viewport, TOOL_CATEGORY, "Condições", 50);
+
+	-- Integração com os Gatilhos: aplicar condição num token (id estável fsUid)
+	FSC.keepAlive(scene, "fscond_apply", scene:newBroadcastListener("fscond_apply", function(sender, id, msg)
+		if not scene.isGM or type(msg) ~= "table" or type(msg.uid) ~= "string" or type(msg.cond) ~= "string" then
+			return;
+		end;
+
+		for _, t in ipairs(FSC.allTokens(scene)) do
+			local ud = t.userData;
+
+			if ud ~= nil and ud.fsUid == msg.uid then
+				FSCOND.applyByName(scene, t, msg.cond, tostring(msg.rounds or ""));
+				return;
+			end;
+		end;
+	end));
 
 	-- Integração com o Tracker de Combate: ao fechar cada volta, o tracker
 	-- envia "fscond_advance". Só o cliente do mestre aplica, para não

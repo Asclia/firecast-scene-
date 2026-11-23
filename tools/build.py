@@ -95,6 +95,14 @@ PLUGINS = {
             "tool_torch": "delapouite/torch",
         },
     },
+    "SceneSuite_Triggers": {
+        "tools": {
+            "tool_trigger": "lorc/lightning-trio",
+            "tool_door": "lorc/wooden-door",
+            "tool_edit": "delapouite/pencil",
+            "tool_group": "lorc/cubes",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",
