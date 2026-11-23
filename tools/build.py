@@ -218,7 +218,7 @@ def xml_attr(s):
 def gen_conditions_form(pdir):
     tiles = []
     for gid, gname in CD.GROUPS:
-        tiles.append('\t\t\t\t<flowPart name="grpHdr_%s" height="30" minWidth="880" maxWidth="5000" margins="{left=4, right=4, top=8}">\n'
+        tiles.append('\t\t\t\t<flowPart name="grpHdr_%s" height="30" minWidth="240" maxWidth="5000" margins="{left=4, right=4, top=8}">\n'
                      '\t\t\t\t\t<label align="client" text="%s" fontSize="15" fontStyle="bold" fontColor="#FFCC66"/>\n'
                      '\t\t\t\t\t<horzLine align="bottom" strokeColor="#FFCC6670"/>\n'
                      '\t\t\t\t</flowPart>\n\t\t\t\t<flowLineBreak/>' % (gid, xml_attr(gname)))

@@ -239,7 +239,7 @@ function FSREACH.openFor(scene, tokens)
 		end
 	});
 
-	scene.viewport:showForm(frm, {placement = "center"});
+	FSC.showFormFit(scene.viewport, frm, 430, 390, "center");
 end;
 
 ----------------------------------------------------------------------

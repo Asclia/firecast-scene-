@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<popupForm name="frmFSWeather" width="330" height="270" drawContainer="true" resizable="false"
+<popupForm name="frmFSWeather" width="330" height="270" drawContainer="true" resizable="true"
            placement="center" cancelable="true">
 
 	<style>
@@ -56,7 +56,8 @@
 		end;
 	]]></script>
 
-	<layout align="client" margins="{left=10, right=10, top=8, bottom=8}">
+	<scrollBox align="client">
+	<layout left="10" top="8" width="310" height="248">
 		<label left="0" top="0" width="310" height="24" fontSize="16" fontStyle="bold" text="Clima do tabuleiro"/>
 
 		<label class="cap" left="0" top="34" text="Efeito:"/>
@@ -85,4 +86,5 @@
 		<button left="106" top="210" width="96" height="30" text="Fechar" onClick="self:closeMe()"/>
 		<button left="214" top="210" width="96" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
 	</layout>
+	</scrollBox>
 </popupForm>

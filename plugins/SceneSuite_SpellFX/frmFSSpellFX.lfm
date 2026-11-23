@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<popupForm name="frmFSSpellFX" width="300" height="270" drawContainer="true" resizable="false"
+<popupForm name="frmFSSpellFX" width="300" height="270" drawContainer="true" resizable="true"
            placement="topLeft" cancelable="false">
 
 	<style>
@@ -78,7 +78,8 @@
 		end;
 	]]></script>
 
-	<layout align="client" margins="{left=8, right=8, top=6, bottom=6}">
+	<scrollBox align="client">
+	<layout left="8" top="6" width="284" height="252">
 		<label left="0" top="0" width="284" height="22" fontSize="15" fontStyle="bold" text="Animação de magia"/>
 
 		<label class="cap" left="0" top="28" text="Efeito:"/>
@@ -100,4 +101,5 @@
 
 		<button left="184" top="226" width="100" height="26" text="Fechar" onClick="self:doClose()"/>
 	</layout>
+	</scrollBox>
 </popupForm>

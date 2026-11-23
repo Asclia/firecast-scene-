@@ -1457,7 +1457,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 				end
 			});
 
-			viewport:showForm(frm, {placement = "topLeft"});
+			FSC.showFormFit(viewport, frm, 300, 270, "topLeft", 200, 140);
 			listeners[#listeners + 1] = viewport:listen("onMouseDown", onMouseDown);
 			listeners[#listeners + 1] = viewport:listen("onKeyDown", onKeyDown);
 			listeners[#listeners + 1] = viewport:listen("onAfterDrawLayers", drawPending);

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<popupForm name="frmFSAura" width="430" height="470" drawContainer="true" resizable="false"
+<popupForm name="frmFSAura" width="430" height="470" drawContainer="true" resizable="true"
            placement="center" cancelable="true">
 
 	<style>
@@ -115,7 +115,8 @@
 		end;
 	]]></script>
 
-	<layout align="client" margins="{left=10, right=10, top=8, bottom=8}">
+	<scrollBox align="client">
+	<layout left="10" top="8" width="410" height="448">
 		<label name="labTitle" left="0" top="0" width="410" height="24" fontSize="16" fontStyle="bold" wordWrap="false"/>
 
 		<label class="cap" left="0" top="32" text="Aura:"/>
@@ -178,4 +179,5 @@
 		<button left="176" top="424" width="110" height="30" text="Fechar" onClick="self:closeMe()"/>
 		<button left="296" top="424" width="110" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
 	</layout>
+	</scrollBox>
 </popupForm>

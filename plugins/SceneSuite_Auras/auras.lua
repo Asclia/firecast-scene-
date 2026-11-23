@@ -252,7 +252,7 @@ function FSAURA.openFor(scene, tokens)
 		end
 	});
 
-	scene.viewport:showForm(frm, {placement = "center"});
+	FSC.showFormFit(scene.viewport, frm, 430, 470, "center");
 end;
 
 ----------------------------------------------------------------------

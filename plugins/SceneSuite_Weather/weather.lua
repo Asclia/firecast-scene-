@@ -629,7 +629,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 				end
 			});
 
-			viewport:showForm(frm, {placement = "center"});
+			FSC.showFormFit(viewport, frm, 330, 270, "center");
 		end);
 
 	viewport:addToolButton(TOOL_CATEGORY, "Clima: ligar/desligar só para mim",

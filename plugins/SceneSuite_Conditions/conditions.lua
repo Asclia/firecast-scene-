@@ -528,7 +528,7 @@ function FSCOND.openFor(scene, tokens)
 		end
 	});
 
-	scene.viewport:showForm(frm, {placement = "center"});
+	FSC.showFormFit(scene.viewport, frm, 940, 640, "center", 260, 220);
 end;
 
 ----------------------------------------------------------------------

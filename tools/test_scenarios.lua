@@ -73,6 +73,12 @@ do
 	opened.cmbFilter.value = "ff"
 	opened:applyFilter()
 	assert(opened.flp_blinded.visible == false and opened.flp_ff_haste.visible == true, "filtro")
+	opened.cmbFilter.value = "all"; opened.edtSearch.text = "cego"; opened:applyFilter()
+	assert(opened.flp_blinded.visible == true and opened.flp_shaken.visible == false, "busca por nome")
+	assert(opened.grpHdr_ff.visible == false and opened.grpHdr_pf.visible == true, "cabeçalho some sem resultados")
+	opened.edtSearch.text = "haste"; opened:applyFilter()
+	assert(opened.flp_ff_haste.visible and opened.flp_haste.visible, "busca em inglês")
+	opened.edtSearch.text = ""; opened:applyFilter()
 	opened:doApply()
 	local list = FSCOND.getList(large)
 	assert(#list == 3, "3 condições, veio " .. #list)
@@ -358,4 +364,23 @@ do
 	assert(#MOCK.messages == m0 + 1 and MOCK.messages[#MOCK.messages].msg.fx == "fireball", "integração")
 	frames(120, 25)
 	print("Integração OK")
+end
+
+------------------------------------------------------------------ Responsividade
+do
+	local W0, H0 = vp.width, vp.height
+	vp.width, vp.height = 320, 240   -- Scene pequeno no canto da tela
+	FSCOND.openFor(scene, {large})
+	local f = MOCK.forms.frmFSConditions
+	assert(f.width <= 320 * 0.92 and f.height <= 240 * 0.92, "condições cabe no scene: " .. f.width .. "x" .. f.height)
+	FSAURA.openFor(scene, {large})
+	assert(MOCK.forms.frmFSAura.width <= 295, "auras cabe")
+	vp.width, vp.height = 120, 90     -- menor que o mínimo: respeita o mínimo
+	FSREACH.openFor(scene, {large})
+	assert(MOCK.forms.frmFSReach.width == 220 and MOCK.forms.frmFSReach.height == 160, "mínimo")
+	vp.width, vp.height = 2000, 1400  -- tela grande: tamanho natural
+	FSCOND.openFor(scene, {large})
+	assert(f.width == 940 and f.height == 640, "tamanho natural")
+	vp.width, vp.height = W0, H0
+	print("Responsividade OK")
 end

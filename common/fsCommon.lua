@@ -959,6 +959,26 @@ function FSC.logError(tag, msg)
 	end);
 end;
 
+-- Abre um popup dimensionado para caber no Scene. O Scene pode estar
+-- pequeno num canto da tela: o painel nunca passa de ~92% do viewport e
+-- nunca fica menor que minW x minH (o conteúdo rola quando não cabe).
+function FSC.showFormFit(viewport, frm, w, h, placement, minW, minH)
+	local vw = tonumber(viewport.width) or w;
+	local vh = tonumber(viewport.height) or h;
+	minW = minW or 220;
+	minH = minH or 160;
+
+	local fw = math.max(minW, math.min(w, math.floor(vw * 0.92)));
+	local fh = math.max(minH, math.min(h, math.floor(vh * 0.92)));
+
+	pcall(function()
+		frm.width = fw;
+		frm.height = fh;
+	end);
+
+	return viewport:showForm(frm, {placement = placement or "center"});
+end;
+
 -- Cria a categoria de ferramentas própria de cada plugin
 function FSC.setupCategory(viewport, name, title, order)
 	viewport:setupToolCategory(name, title, order);
