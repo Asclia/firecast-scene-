@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSHP" width="300" height="236" drawContainer="true" resizable="true"
+           placement="topRight" cancelable="false">
+
+	<style>
+		button.op {
+			height: 30;
+			fontStyle: bold;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+
+		-- info = {bar = "1", float = true, onOp(op, amount, bar, float), onUndo(), onBarChange(bar), onClose()}
+		function self:prepareFor(info)
+			options = info or {};
+			self.cmbBar.value = options.bar or "1";
+			self.cbxFloat.checked = options.float ~= false;
+			self:refresh();
+		end;
+
+		function self:refresh()
+			if options.describe ~= nil then
+				self.labSel.text = options.describe(self.cmbBar.value or "1");
+			end;
+		end;
+
+		function self:doOp(op)
+			local n = tonumber((((self.edtAmount.text or ""):gsub(",", "."))));
+
+			if n == nil or n < 0 then
+				showMessage("Digite um valor (número positivo).");
+				return;
+			end;
+
+			if options.onOp ~= nil then
+				options.onOp(op, n, self.cmbBar.value or "1", self.cbxFloat.checked);
+			end;
+
+			self:refresh();
+		end;
+
+		function self:doUndo()
+			if options.onUndo ~= nil then
+				options.onUndo();
+			end;
+
+			self:refresh();
+		end;
+
+		function self:barChanged()
+			if options.onBarChange ~= nil then
+				options.onBarChange(self.cmbBar.value or "1");
+			end;
+
+			self:refresh();
+		end;
+
+		function self:doClose()
+			if options.onClose ~= nil then
+				options.onClose();
+			end;
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="284" height="222">
+		<label left="0" top="0" width="120" height="24" fontSize="15" fontStyle="bold" text="PV rápido"/>
+		<comboBox name="cmbBar" left="124" top="0" width="160" height="24" fontSize="12"
+		          items="{'Barra 1 (PV)', 'Barra 2', 'Barra 3'}" values="{'1', '2', '3'}" value="1"
+		          onChange="self:barChanged()"/>
+
+		<label name="labSel" left="0" top="28" width="284" height="44" fontSize="11" fontColor="#B0BEC5"
+		       wordWrap="true" text="Selecione tokens no tabuleiro."/>
+
+		<edit name="edtAmount" left="0" top="76" width="284" height="32" fontSize="18" type="float"
+		      horzTextAlign="center" textPrompt="valor"/>
+
+		<button class="op" left="0" top="114" width="92" text="Dano" fontColor="#FF8A80" onClick="self:doOp('damage')"/>
+		<button class="op" left="96" top="114" width="92" text="Dano ½" fontColor="#FF8A80" onClick="self:doOp('half')"/>
+		<button class="op" left="192" top="114" width="92" text="Dano ×1,5" fontColor="#FF8A80" onClick="self:doOp('weak')"/>
+
+		<button class="op" left="0" top="148" width="92" text="Cura" fontColor="#B9F6CA" onClick="self:doOp('heal')"/>
+		<button class="op" left="96" top="148" width="92" text="PV temp." fontColor="#82B1FF" onClick="self:doOp('temp')"/>
+		<button class="op" left="192" top="148" width="92" text="Definir" onClick="self:doOp('set')"/>
+
+		<checkBox name="cbxFloat" left="0" top="186" width="120" height="26" fontSize="11" text="Números no token" checked="true"/>
+		<button left="124" top="186" width="78" height="26" text="Desfazer" onClick="self:doUndo()"/>
+		<button left="206" top="186" width="78" height="26" text="Fechar" onClick="self:doClose()"/>
+	</layout>
+	</scrollBox>
+</popupForm>

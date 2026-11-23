@@ -150,6 +150,9 @@ function MOCK.newScene()
   vp.drawRect = vp.drawEllipse
   vp.drawLine = function(self, ...) assert(self._draw, "line sem prepareDraw"); rect4(self, ...) end
   vp.fillPolygon = function(self, poly, op) assert(type(poly) == "table" and #poly >= 3, "poly"); for _, p in ipairs(poly) do num(p.x, "poly.x"); num(p.y, "poly.y") end if op then num(op, "op"); assert(op >= 0 and op <= 1.0001, "opacity poly " .. op) end self.draws = self.draws + 1 end
+  vp.prepareFont = function(self, size, name, bold) num(size, "font size"); self._font = true end
+  vp.textSize = function(self, txt) assert(self._font, "textSize sem prepareFont"); return #tostring(txt) * 8, 16 end
+  vp.fillText = function(self, x, y, txt, op) assert(self._fill, "fillText sem prepareFill"); num(x, "tx"); num(y, "ty"); assert(type(txt) == "string"); if op then num(op, "op"); assert(op >= 0 and op <= 1.0001, "opacity texto " .. op) end self.draws = self.draws + 1 end
   vp.fillACell = function(self, i, j, op) num(i, "i"); num(j, "j"); self.draws = self.draws + 1 end
 
   local items = makeListenable({})
@@ -236,6 +239,7 @@ def run(one_based):
         "SceneSuite_SpellAreas": ["fsCommon.lua", "spellAreas.lua"],
         "SceneSuite_Weather": ["fsCommon.lua", "weather.lua"],
         "SceneSuite_SpellFX": ["fsCommon.lua", "spellfx.lua"],
+        "SceneSuite_HP": ["fsCommon.lua", "hp.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():

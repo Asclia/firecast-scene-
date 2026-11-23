@@ -74,6 +74,11 @@ PLUGINS = {
             "tool_local": "delapouite/sun-cloud",
         },
     },
+    "SceneSuite_HP": {
+        "tools": {
+            "tool_hp": "zeromancer/heart-plus",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",

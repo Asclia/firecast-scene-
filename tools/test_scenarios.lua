@@ -384,3 +384,39 @@ do
 	vp.width, vp.height = W0, H0
 	print("Responsividade OK")
 end
+
+------------------------------------------------------------------ PV rápido
+do
+	medium.barValue1 = "20"; medium.barMax1 = "30"
+	large.barValue1 = "50"; large.barMax1 = "50"
+	medium.selected = true; large.selected = true
+	tool("PV rápido").cb()
+	local f = MOCK.forms.frmFSHP
+	assert(f ~= nil and f.labSel.text:find("20/30"), "painel mostra seleção: " .. tostring(f and f.labSel.text))
+	f.edtAmount.text = "8"; f:doOp("damage")
+	assert(medium.barValue1 == "12" and large.barValue1 == "42", "dano")
+	f.edtAmount.text = "5"; f:doOp("half")
+	assert(medium.barValue1 == "10", "metade (mínimo 1): " .. medium.barValue1)
+	f.edtAmount.text = "4"; f:doOp("weak")
+	assert(medium.barValue1 == "4", "x1,5: " .. medium.barValue1)
+	f:doUndo()
+	assert(medium.barValue1 == "10", "desfazer")
+	f.edtAmount.text = "100"; f:doOp("heal")
+	assert(medium.barValue1 == "30" and large.barValue1 == "50", "cura limitada ao máximo")
+	f.edtAmount.text = "6"; f:doOp("temp")
+	assert(FSHP.getTemp(medium) == 6 and count(medium.canvas, "fshp_temp") == 2, "PV temporário")
+	f.edtAmount.text = "10"; f:doOp("damage")
+	assert(FSHP.getTemp(medium) == 0 and medium.barValue1 == "26", "temp absorve primeiro: " .. medium.barValue1)
+	assert(count(medium.canvas, "fshp_temp") == 0, "temp some ao zerar")
+	f.edtAmount.text = "40"; f:doOp("damage")
+	assert(medium.barValue1 == "-14", "PV negativo permitido (morrendo)")
+	f.edtAmount.text = "7"; f:doOp("set")
+	assert(medium.barValue1 == "7", "definir")
+	frames(70, 25)   -- números flutuantes
+	f.edtAmount.text = "-3"; f:doOp("damage")   -- inválido
+	f.edtAmount.text = "3"; f.cmbBar.value = "2"; f:barChanged(); f:doOp("damage")  -- sem barra 2
+	assert(f.labSel.text:find("sem barra"), "aviso sem barra")
+	f:doClose()
+	medium.selected = false; large.selected = false
+	print("PV rápido OK")
+end

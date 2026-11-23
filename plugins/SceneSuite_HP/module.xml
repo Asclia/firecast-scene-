@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.HP</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: PV Rápido</name>
+        <description>Painel compacto para aplicar dano, cura e PV temporário nos tokens selecionados, com desfazer e números flutuantes.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>
