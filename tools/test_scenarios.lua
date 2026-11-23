@@ -635,3 +635,70 @@ do
 	f:doDelete()
 	print("Gatilhos OK")
 end
+
+------------------------------------------------------------------ Barra de tokens
+do
+	scene.isGM = true
+	medium.ownerUserID = "jogador1"; medium.name = "Guerreiro"; medium.barValue1 = "22"; medium.barMax1 = "30"
+	large.ownerUserID = "jogador2"; large.name = "Mago"
+	tiny.ownerUserID = ""
+	-- deixa o guerreiro e o mago no combate para checar a iniciativa
+	FSCOMBAT.endCombat(scene)
+	FSCOMBAT.addTokens(scene, {medium, large}, false)
+
+	tool("Barra de tokens: abrir").cb()
+	local bar = MOCK.forms.frmFSTokenBar
+	assert(bar.tile1.visible and bar.tile2.visible and not bar.tile3.visible, "2 tokens de jogador")
+	assert(bar.tileHP2.text:find("22/30") or bar.tileHP1.text:find("22/30"), "PV na barra")
+	assert(bar.btnRequest.visible, "mestre vê pedir rolagem")
+	bar:tileClick(1)
+	assert(#FSC.selectedTokens(scene) == 1, "clique seleciona")
+
+	-- mestre pede iniciativa para todos os jogadores
+	bar:doRequest()
+	local req = MOCK.forms.frmFSTBRequest
+	req.cmbType.value = "init"; req.cmbType.text = "Iniciativa"; req.edtDC.text = ""; req.cmbTarget.value = "players"
+	req:doSend()
+	assert(req.labResTitle.text:find("Iniciativa"), req.labResTitle.text)
+	assert(req.res1.visible and req.resStatus1.text == "aguardando", "aguardando jogadores")
+
+	-- simula o cliente do jogador 1 recebendo o pedido
+	scene.isGM = false; scene.currentUserID = "jogador1"
+	local last = MOCK.messages[#MOCK.messages].msg
+	for _, l in ipairs(MOCK.broadcastListeners) do if l.id == "fstb_req" then l.fn("mestre", "fstb_req", last) end end
+	local roll = MOCK.forms.frmFSTBRoll
+	assert(roll ~= nil and roll.labTitle.text:find("Guerreiro"), "popup para o dono")
+	roll.edtMod.text = "4"; roll:doRoll()
+	assert(roll.labResult.text:find("d20"), roll.labResult.text)
+	assert(FSTB.getMod(medium, "init") == 4, "modificador lembrado")
+	roll:doClose()
+	scene.isGM = true; scene.currentUserID = "mestre"
+	-- o cliente do mestre recebe o resultado do jogador
+	local res = MOCK.messages[#MOCK.messages].msg
+	assert(MOCK.messages[#MOCK.messages].id == "fstb_res", "resultado enviado")
+	for _, l in ipairs(MOCK.broadcastListeners) do if l.id == "fstb_res" then l.fn("jogador1", "fstb_res", res) end end
+
+	-- jogador 2 ausente: mestre rola pendentes
+	FSTB.setMod(large, "init", 2)
+	req:doRollPending()
+	req:refresh()
+	assert(req.resTotal1.text ~= "..." and req.resTotal2.text ~= "...", "todos com resultado")
+
+	-- iniciativa caiu no tracker
+	local st, list = FSCOMBAT.getState(scene)
+	for _, e in ipairs(list) do assert(e.i ~= nil, "iniciativa no tracker para " .. e.n) end
+
+	-- pedido com CD e secreto, só selecionados
+	medium.selected = true
+	req.cmbType.value = "ref"; req.cmbType.text = "Reflexos"; req.edtDC.text = "15"; req.cbxSecret.checked = true; req.cmbTarget.value = "sel"
+	req:doSend(); req:doRollPending(); req:refresh()
+	assert(req.resStatus1.text == "sucesso" or req.resStatus1.text == "falha", "sucesso/falha contra CD")
+	medium.selected = false
+	-- "Outra..." sem nome
+	req.cmbType.value = "custom"; req.edtCustom.text = ""; req:doSend()
+	bar:refresh()
+	assert(bar.labLast.text:find("Reflexos"), "resumo na barra: " .. bar.labLast.text)
+	frames(25, 50)
+	req:closeMe(); bar:doClose()
+	print("Barra de tokens OK")
+end

@@ -166,6 +166,7 @@ function MOCK.newScene()
       if k == "selection" then local s = {} for _, it in ipairs(scene._items) do if it.selected then s[#s+1] = it end end return s end end})
   function items:enumAtPoint(x, y, layer)
     local out = {} for _, it in ipairs(scene._items) do if x >= it.x and x <= it.x + it.width and y >= it.y and y <= it.y + it.height then out[#out+1] = it end end return out end
+  function items:clearSelection() for _, it in ipairs(scene._items) do it.selected = false end end
   function items:itemAtPoint(x, y, l) local o = self:enumAtPoint(x, y, l) return o[#o] end
   function items:addUserDrawing(layer) local it = newItem(scene, "userDrawing", 0, 0, 1, 1); it.isMine = true; scene._items[#scene._items+1] = it; return it end
   function scene:addToken(x, y, w, h) local it = newItem(scene, "token", x, y, w, h); scene._items[#scene._items+1] = it; items:fire("onItemAdded", it); return it end
@@ -247,6 +248,7 @@ def run(one_based):
         "SceneSuite_Combat": ["fsCommon.lua", "combat.lua"],
         "SceneSuite_Light": ["fsCommon.lua", "light.lua"],
         "SceneSuite_Triggers": ["fsCommon.lua", "triggers.lua"],
+        "SceneSuite_TokenBar": ["fsCommon.lua", "tokenbar.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():

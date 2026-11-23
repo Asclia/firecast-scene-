@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module sdkVersion="3.7b">
+    <!-- O id identifica o plugin globalmente e NÃO deve mudar depois de publicado. -->
+    <id>SceneSuite.TokenBar</id>
+    <version>1.0.0</version>
+    <info lang="pt-BR">
+        <name>Scene Suite: Barra de Tokens</name>
+        <description>Barra com os tokens dos jogadores (retrato, PV, condições) e pedidos de rolagem do mestre com CD, modo secreto e resultados; iniciativa vai para o Tracker de Combate.</description>
+        <author>Scene Suite</author>
+        <site></site>
+        <contact></contact>
+    </info>
+</module>

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSTBRequest" width="360" height="470" drawContainer="true" resizable="true"
+           placement="center" cancelable="true">
+
+	<script><![CDATA[
+		local options = {};
+		local MAX = 16;
+
+		function self:closeMe()
+			if options.close ~= nil then options.close(); else self:close(); end;
+		end;
+
+		-- info = {onSend(req), onRollPending(), results() -> {title, rows}, close}
+		function self:prepareFor(info)
+			options = info or {};
+			self:typeChanged();
+			self:refresh();
+		end;
+
+		function self:typeChanged()
+			self.edtCustom.enabled = self.cmbType.value == "custom";
+		end;
+
+		function self:doSend()
+			local label = self.cmbType.text or "";
+			local key = self.cmbType.value or "custom";
+
+			if key == "custom" then
+				label = self.edtCustom.text or "";
+				key = "c_" .. label:lower();
+
+				if label:gsub("%s", "") == "" then
+					showMessage("Digite o nome da rolagem.");
+					return;
+				end;
+			end;
+
+			if options.onSend ~= nil then
+				options.onSend({label = label, key = key, dc = tonumber(self.edtDC.text), secret = self.cbxSecret.checked,
+				                target = self.cmbTarget.value or "sel"});
+			end;
+
+			self:refresh();
+		end;
+
+		function self:doRollPending()
+			if options.onRollPending ~= nil then options.onRollPending(); end;
+			self:refresh();
+		end;
+
+		function self:refresh()
+			if options.results == nil then return; end;
+			local r = options.results();
+			self:beginUpdate();
+			self.labResTitle.text = r.title or "Nenhum pedido ainda.";
+
+			for i = 1, MAX do
+				local row = r.rows[i];
+				self["res" .. i].visible = row ~= nil;
+
+				if row ~= nil then
+					self["resName" .. i].text = row.name;
+					self["resTotal" .. i].text = row.total or "...";
+					self["resStatus" .. i].text = row.status or "";
+					self["resStatus" .. i].fontColor = row.color or "#FFFFFF";
+				end;
+			end;
+
+			self:endUpdate();
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="344" height="456">
+		<label left="0" top="0" width="344" height="24" fontSize="15" fontStyle="bold" text="Pedir rolagem"/>
+
+		<label left="0" top="30" width="80" height="26" text="Rolagem:" vertTextAlign="center"/>
+		<comboBox name="cmbType" left="84" top="30" width="260" height="26" onChange="self:typeChanged()"
+		          items="{'Iniciativa', 'Fortitude', 'Reflexos', 'Vontade', 'Percepção', 'Furtividade', 'Sentir Motivação', 'Conhecimento', 'Acrobacia', 'Escalar', 'Outra...'}"
+		          values="{'init', 'fort', 'ref', 'will', 'perc', 'stealth', 'sense', 'know', 'acro', 'climb', 'custom'}" value="perc"/>
+		<edit name="edtCustom" left="84" top="60" width="260" height="26" textPrompt="nome da rolagem (Outra...)"/>
+
+		<label left="0" top="92" width="80" height="26" text="CD:" vertTextAlign="center"/>
+		<edit name="edtDC" left="84" top="92" width="60" height="26" type="number" textPrompt="-"/>
+		<checkBox name="cbxSecret" left="156" top="92" width="188" height="26" text="Secreta (só o mestre vê)"/>
+
+		<label left="0" top="124" width="80" height="26" text="Quem:" vertTextAlign="center"/>
+		<comboBox name="cmbTarget" left="84" top="124" width="260" height="26"
+		          items="{'Tokens selecionados', 'Todos os tokens de jogadores'}" values="{'sel', 'players'}" value="players"/>
+
+		<button left="164" top="158" width="180" height="30" text="Pedir rolagem" fontStyle="bold" onClick="self:doSend()"/>
+
+		<horzLine left="0" top="198" width="344" strokeColor="#FFFFFF30"/>
+		<label name="labResTitle" left="0" top="204" width="344" height="22" fontSize="13" fontStyle="bold" fontColor="#FFCC66"
+		       wordWrap="false" textTrimming="character"/>
+		<layout left="0" top="230" width="344" height="184">
+		<layout name="res1" align="top" height="24" visible="false">
+			<label name="resStatus1" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal1" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName1" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res2" align="top" height="24" visible="false">
+			<label name="resStatus2" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal2" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName2" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res3" align="top" height="24" visible="false">
+			<label name="resStatus3" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal3" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName3" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res4" align="top" height="24" visible="false">
+			<label name="resStatus4" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal4" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName4" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res5" align="top" height="24" visible="false">
+			<label name="resStatus5" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal5" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName5" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res6" align="top" height="24" visible="false">
+			<label name="resStatus6" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal6" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName6" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res7" align="top" height="24" visible="false">
+			<label name="resStatus7" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal7" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName7" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res8" align="top" height="24" visible="false">
+			<label name="resStatus8" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal8" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName8" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res9" align="top" height="24" visible="false">
+			<label name="resStatus9" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal9" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName9" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res10" align="top" height="24" visible="false">
+			<label name="resStatus10" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal10" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName10" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res11" align="top" height="24" visible="false">
+			<label name="resStatus11" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal11" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName11" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res12" align="top" height="24" visible="false">
+			<label name="resStatus12" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal12" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName12" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res13" align="top" height="24" visible="false">
+			<label name="resStatus13" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal13" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName13" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res14" align="top" height="24" visible="false">
+			<label name="resStatus14" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal14" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName14" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res15" align="top" height="24" visible="false">
+			<label name="resStatus15" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal15" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName15" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		<layout name="res16" align="top" height="24" visible="false">
+			<label name="resStatus16" align="right" width="90" horzTextAlign="trailing" vertTextAlign="center" fontSize="12" fontStyle="bold"/>
+			<label name="resTotal16" align="right" width="70" horzTextAlign="center" vertTextAlign="center" fontSize="13" fontStyle="bold"/>
+			<label name="resName16" align="client" vertTextAlign="center" fontSize="12" wordWrap="false" textTrimming="character"/>
+		</layout>
+		</layout>
+
+		<button left="0" top="420" width="200" height="30" text="Rolar pendentes (mestre)" onClick="self:doRollPending()"/>
+		<button left="244" top="420" width="100" height="30" text="Fechar" onClick="self:closeMe()"/>
+	</layout>
+	</scrollBox>
+</popupForm>

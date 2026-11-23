@@ -543,6 +543,20 @@ SceneLib.registerPlugin(function(scene, attachment)
 			end);
 		end));
 
+	-- iniciativa vinda da Barra de Tokens (pedido de rolagem "Iniciativa")
+	FSC.keepAlive(scene, "fscombat_init", scene:newBroadcastListener("fscombat_init", function(sender, id, msg)
+		if not scene.isGM or type(msg) ~= "table" or type(msg.uid) ~= "string" then return; end;
+
+		local st, list = FSCOMBAT.getState(scene);
+
+		for idx, e in ipairs(list) do
+			if e.u == msg.uid then
+				FSCOMBAT.setInit(scene, idx, tonumber(msg.value));
+				return;
+			end;
+		end;
+	end));
+
 	-- tokens apagados somem da lista no próximo salvamento; tokens renomeados
 	-- atualizam o nome exibido
 	scene.items:listen("onItemRemoved", function()

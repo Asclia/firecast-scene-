@@ -103,6 +103,12 @@ PLUGINS = {
             "tool_group": "lorc/cubes",
         },
     },
+    "SceneSuite_TokenBar": {
+        "tools": {
+            "tool_bar": "delapouite/human-target",
+            "tool_request": "delapouite/dice-twenty-faces-twenty",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",

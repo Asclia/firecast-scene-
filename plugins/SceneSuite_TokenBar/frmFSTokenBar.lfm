@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSTokenBar" width="680" height="128" drawContainer="true" resizable="true"
+           placement="bottom" cancelable="false">
+
+	<script><![CDATA[
+		local options = {};
+		local MAX = 16;
+		local tileUid = {};
+
+		-- info = {model() -> {tiles = {...}, last = "texto", isGM}, onTile(uid), onRequest(), onClose()}
+		function self:prepareFor(info)
+			options = info or {};
+			self:refresh();
+		end;
+
+		function self:refresh()
+			if options.model == nil then return; end;
+			local m = options.model();
+			self:beginUpdate();
+			tileUid = {};
+
+			for i = 1, MAX do
+				local t = m.tiles[i];
+				local tile = self["tile" .. i];
+
+				if t == nil then
+					tile.visible = false;
+				else
+					tile.visible = true;
+					tileUid[i] = t.uid;
+					self["tileImg" .. i].src = t.image or "";
+					self["tileName" .. i].text = t.name or "?";
+					self["tileHP" .. i].text = t.hp or "";
+					self["tileInfo" .. i].text = t.info or "";
+					self["tileBg" .. i].strokeColor = t.selected and "#FFD54F" or "#FFFFFF30";
+					self["tileBg" .. i].strokeSize = t.selected and 2 or 1;
+				end;
+			end;
+
+			self.labLast.text = m.last or "";
+			self.btnRequest.visible = m.isGM == true;
+			self.labEmpty.visible = #m.tiles == 0;
+			self:endUpdate();
+		end;
+
+		function self:tileClick(i)
+			if tileUid[i] ~= nil and options.onTile ~= nil then
+				options.onTile(tileUid[i]);
+			end;
+		end;
+
+		function self:doRequest()
+			if options.onRequest ~= nil then options.onRequest(); end;
+		end;
+
+		function self:doClose()
+			if options.onClose ~= nil then options.onClose(); end;
+		end;
+	]]></script>
+
+	<layout align="top" height="26" margins="{left=4, right=4, top=2}">
+		<button align="right" width="26" text="X" onClick="self:doClose()"/>
+		<button name="btnRequest" align="right" width="120" text="Pedir rolagem" margins="{right=4}" onClick="self:doRequest()"/>
+		<label name="labLast" align="client" fontSize="11" fontColor="#FFCC66" wordWrap="false" textTrimming="character"/>
+	</layout>
+
+	<scrollBox align="client">
+		<label name="labEmpty" align="top" height="24" fontSize="11" fontColor="#B0BEC5"
+		       text="Nenhum token de jogador no tabuleiro (tokens com dono)."/>
+		<flowLayout align="top" autoHeight="true" margins="{left=2, right=2}">
+		<flowPart name="tile1" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg1" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(1)"/>
+			<image name="tileImg1" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName1" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP1" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo1" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile2" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg2" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(2)"/>
+			<image name="tileImg2" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName2" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP2" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo2" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile3" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg3" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(3)"/>
+			<image name="tileImg3" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName3" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP3" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo3" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile4" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg4" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(4)"/>
+			<image name="tileImg4" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName4" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP4" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo4" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile5" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg5" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(5)"/>
+			<image name="tileImg5" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName5" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP5" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo5" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile6" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg6" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(6)"/>
+			<image name="tileImg6" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName6" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP6" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo6" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile7" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg7" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(7)"/>
+			<image name="tileImg7" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName7" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP7" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo7" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile8" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg8" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(8)"/>
+			<image name="tileImg8" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName8" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP8" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo8" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile9" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg9" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(9)"/>
+			<image name="tileImg9" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName9" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP9" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo9" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile10" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg10" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(10)"/>
+			<image name="tileImg10" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName10" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP10" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo10" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile11" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg11" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(11)"/>
+			<image name="tileImg11" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName11" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP11" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo11" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile12" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg12" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(12)"/>
+			<image name="tileImg12" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName12" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP12" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo12" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile13" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg13" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(13)"/>
+			<image name="tileImg13" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName13" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP13" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo13" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile14" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg14" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(14)"/>
+			<image name="tileImg14" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName14" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP14" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo14" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile15" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg15" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(15)"/>
+			<image name="tileImg15" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName15" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP15" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo15" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		<flowPart name="tile16" width="150" height="56" margins="{left=2, right=2, top=2, bottom=2}" visible="false">
+			<rectangle name="tileBg16" align="client" color="#FFFFFF12" xradius="6" yradius="6" strokeColor="#FFFFFF30" strokeSize="1"
+			           onClick="self:tileClick(16)"/>
+			<image name="tileImg16" left="4" top="4" width="48" height="48" style="proportional" hitTest="false"/>
+			<label name="tileName16" left="56" top="4" width="90" height="20" fontSize="12" fontStyle="bold" wordWrap="false" textTrimming="character" hitTest="false"/>
+			<label name="tileHP16" left="56" top="24" width="90" height="16" fontSize="11" fontColor="#B9F6CA" wordWrap="false" hitTest="false"/>
+			<label name="tileInfo16" left="56" top="39" width="90" height="15" fontSize="10" fontColor="#FFCC66" wordWrap="false" textTrimming="character" hitTest="false"/>
+		</flowPart>
+		</flowLayout>
+	</scrollBox>
+</popupForm>

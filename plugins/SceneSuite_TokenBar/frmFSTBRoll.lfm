@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSTBRoll" width="320" height="200" drawContainer="true" resizable="true"
+           placement="center" cancelable="false">
+
+	<script><![CDATA[
+		local options = {};
+
+		-- info = {title, sub, mod, onRoll(mod), onClose}
+		function self:prepareFor(info)
+			options = info or {};
+			self.labTitle.text = options.title or "Rolagem pedida";
+			self.labSub.text = options.sub or "";
+			self.edtMod.text = options.mod or "0";
+			self.labResult.text = "";
+			self.btnRoll.enabled = true;
+		end;
+
+		function self:doRoll()
+			local mod = tonumber((((self.edtMod.text or ""):gsub(",", ".")))) or 0;
+
+			if options.onRoll ~= nil then
+				self.labResult.text = options.onRoll(mod) or "";
+			end;
+
+			self.btnRoll.enabled = false;
+		end;
+
+		function self:doClose()
+			if options.onClose ~= nil then options.onClose(); end;
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="304" height="186">
+		<label name="labTitle" left="0" top="0" width="304" height="24" fontSize="15" fontStyle="bold" wordWrap="false" textTrimming="character"/>
+		<label name="labSub" left="0" top="26" width="304" height="20" fontSize="11" fontColor="#B0BEC5" wordWrap="false"/>
+		<label left="0" top="54" width="110" height="28" text="Modificador:" vertTextAlign="center"/>
+		<edit name="edtMod" left="112" top="54" width="70" height="28" fontSize="15" horzTextAlign="center"/>
+		<button name="btnRoll" left="190" top="54" width="114" height="28" text="Rolar d20" fontStyle="bold" onClick="self:doRoll()"/>
+		<label name="labResult" left="0" top="90" width="304" height="50" fontSize="18" fontStyle="bold" fontColor="#FFCC66"
+		       horzTextAlign="center" vertTextAlign="center" wordWrap="true"/>
+		<button left="204" top="150" width="100" height="28" text="Fechar" onClick="self:doClose()"/>
+	</layout>
+	</scrollBox>
+</popupForm>
