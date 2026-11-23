@@ -791,3 +791,49 @@ do
 	_G.sheet = nil
 	print("Diário OK")
 end
+
+------------------------------------------------------------------ Andares: fundo por andar
+do
+	scene.isGM = true
+	scene.userData.fsLevels = ""; scene.userData.fsLevelActive = "1"
+	scene.bkgImageURL = "http://mapas/terreo.png"; scene.bkgColor = "#000000FF"
+	scene.worldWidth = 60; scene.worldHeight = 45
+	scene.grid.offsetX = 0; scene.grid.offsetY = 0; scene.grid.cellSize = 1.5
+	FSLEVELS.records(scene)
+	tool("Andares: gerenciar").cb()
+	local f = MOCK.forms.frmFSLevels
+	f.edtName.text = "Térreo"; f:act("add")
+	f.edtName.text = "Torre"; f:act("add")
+	local recs = FSLEVELS.records(scene)
+	assert(recs[1].has == "1" and recs[2].bg == "http://mapas/terreo.png", "andar novo copia o fundo atual")
+
+	-- mestre troca o mapa nas opções do tabuleiro e salva na Torre
+	scene.bkgImageURL = "http://mapas/torre.png"
+	scene.worldWidth = 30; scene.worldHeight = 30
+	scene.grid.offsetX = 0.4; scene.grid.offsetY = 0.2; scene.grid.cellSize = 1.5
+	f.cmbLevel.value = "2"; f:act("captureBg")
+	assert(f.cmbLevel.items[2]:find("fundo próprio"), "indicação no combo")
+
+	f.cmbLevel.value = "1"; f:act("activate")
+	assert(scene.bkgImageURL == "http://mapas/terreo.png" and scene.worldWidth == 60 and scene.grid.offsetX == 0, "voltou ao térreo")
+	f.cmbLevel.value = "2"; f:act("activate")
+	assert(scene.bkgImageURL == "http://mapas/torre.png" and scene.worldWidth == 30 and scene.grid.offsetX == 0.4, "torre")
+
+	-- andar marcado "não trocar" mantém o fundo atual
+	f.cmbLevel.value = "1"; f:act("clearBg")
+	f:act("activate")
+	assert(scene.bkgImageURL == "http://mapas/torre.png", "não trocar")
+
+	-- escada via gatilho também troca o fundo
+	f.cmbLevel.value = "1"; f:act("captureBg")      -- (térreo agora guarda o mapa atual = torre)
+	scene.bkgImageURL = "http://mapas/outro.png"
+	FSTRIG.run(scene, {x = 0, y = 0, width = 1, height = 1}, {{t = "level", a = "Térreo", b = "sim"}}, medium)
+	assert(scene.bkgImageURL == "http://mapas/torre.png" and FSLEVELS.active(scene) == 1, "escada troca o fundo")
+
+	-- registros antigos (só nome) continuam funcionando
+	scene.userData.fsLevels = FSC.encodeList({{n = "Antigo"}})
+	FSLEVELS.activate(scene, 1)
+	assert(scene.bkgImageURL == "http://mapas/torre.png", "registro antigo não mexe no fundo")
+	f:closeMe()
+	print("Andares (fundo) OK")
+end

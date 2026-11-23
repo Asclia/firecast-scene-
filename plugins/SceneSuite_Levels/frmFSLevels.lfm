@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<popupForm name="frmFSLevels" width="320" height="330" drawContainer="true" resizable="true"
+<popupForm name="frmFSLevels" width="320" height="400" drawContainer="true" resizable="true"
            placement="topLeft" cancelable="true">
 
 	<script><![CDATA[
@@ -23,7 +23,8 @@
 			local items, values = {}, {};
 
 			for i, n in ipairs(m.names) do
-				local txt = i .. ". " .. n .. " (" .. (m.counts[i] or 0) .. " itens)";
+				local txt = i .. ". " .. n .. " (" .. (m.counts[i] or 0) .. " itens"
+				            .. ((m.hasBg ~= nil and m.hasBg[i]) and ", fundo próprio" or "") .. ")";
 
 				if i == m.active then
 					txt = txt .. "  — ATIVO";
@@ -52,7 +53,7 @@
 	]]></script>
 
 	<scrollBox align="client">
-	<layout left="8" top="6" width="304" height="316">
+	<layout left="8" top="6" width="304" height="386">
 		<label left="0" top="0" width="304" height="24" fontSize="15" fontStyle="bold" text="Andares"/>
 		<label name="labActive" left="0" top="24" width="304" height="20" fontSize="12" fontColor="#FFCC66" wordWrap="false"/>
 
@@ -65,12 +66,18 @@
 		<button left="200" top="150" width="104" height="26" text="Renomear" onClick="self:act('rename')"/>
 
 		<horzLine left="0" top="184" width="304" strokeColor="#FFFFFF30"/>
-		<label left="0" top="190" width="304" height="20" fontSize="11" fontColor="#B0BEC5" text="Itens selecionados no tabuleiro:"/>
-		<button left="0" top="212" width="150" height="28" text="Pôr neste andar" onClick="self:act('assign')"/>
-		<button left="154" top="212" width="150" height="28" text="Todos os andares" onClick="self:act('unassign')"/>
-		<button left="0" top="244" width="304" height="28" text="Selecionar os itens deste andar" onClick="self:act('select')"/>
+		<label left="0" top="190" width="304" height="30" fontSize="11" fontColor="#B0BEC5" wordWrap="true"
+		       text="Fundo: troque o mapa nas opções do tabuleiro e salve-o neste andar."/>
+		<button left="0" top="222" width="200" height="28" text="Usar o fundo atual neste andar" onClick="self:act('captureBg')"/>
+		<button left="204" top="222" width="100" height="28" text="Não trocar" onClick="self:act('clearBg')"/>
 
-		<button left="204" top="282" width="100" height="28" text="Fechar" onClick="self:closeMe()"/>
+		<horzLine left="0" top="258" width="304" strokeColor="#FFFFFF30"/>
+		<label left="0" top="262" width="304" height="20" fontSize="11" fontColor="#B0BEC5" text="Itens selecionados no tabuleiro:"/>
+		<button left="0" top="284" width="150" height="28" text="Pôr neste andar" onClick="self:act('assign')"/>
+		<button left="154" top="284" width="150" height="28" text="Todos os andares" onClick="self:act('unassign')"/>
+		<button left="0" top="316" width="304" height="28" text="Selecionar os itens deste andar" onClick="self:act('select')"/>
+
+		<button left="204" top="352" width="100" height="28" text="Fechar" onClick="self:closeMe()"/>
 	</layout>
 	</scrollBox>
 </popupForm>

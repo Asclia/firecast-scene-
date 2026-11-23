@@ -9,6 +9,11 @@
     mão continua escondido.
   - Paredes de andar: retângulos que viram paredes da névoa de guerra só
     quando o andar deles está ativo.
+  - Cada andar guarda o seu fundo do Scene (imagem, cor, tamanho do mundo)
+    e o alinhamento do grid (deslocamento e tamanho da célula), já que mapas
+    de andares diferentes raramente são iguais. Ao criar um andar, ele copia o
+    fundo atual; troque o mapa nas opções do tabuleiro e use "Usar o fundo
+    atual neste andar".
   - Limite: todos veem o mesmo andar ativo (o Firecast não permite que cada
     jogador enxergue um andar diferente ao mesmo tempo).
 
@@ -43,26 +48,82 @@ local function udOf(item)
 	return ok and ud or nil;
 end;
 
-function FSLEVELS.names(scene)
+-- Registros dos andares: {n = nome, has = "1" se guarda fundo, bg = imagem,
+-- bgc = cor, ww/wh = tamanho do mundo, gx/gy = deslocamento do grid, cs = célula}
+function FSLEVELS.records(scene)
 	local ud = scene.userData;
-	local list = FSC.decodeList(ud and ud[LIST_FIELD]);
+	return FSC.decodeList(ud and ud[LIST_FIELD]);
+end;
+
+local function saveRecords(scene, recs)
+	scene.userData[LIST_FIELD] = FSC.encodeList(recs);
+end;
+
+function FSLEVELS.names(scene)
 	local names = {};
 
-	for _, e in ipairs(list) do
+	for _, e in ipairs(FSLEVELS.records(scene)) do
 		names[#names + 1] = e.n or "?";
 	end;
 
 	return names;
 end;
 
-local function saveNames(scene, names)
-	local list = {};
+-- Copia o fundo e o grid atuais do Scene para dentro de um registro
+function FSLEVELS.captureBackground(scene, rec)
+	rec.has = "1";
+	rec.bg = scene.bkgImageURL or "";
+	rec.bgc = tostring(scene.bkgColor or "");
+	rec.ww = tostring(scene.worldWidth or "");
+	rec.wh = tostring(scene.worldHeight or "");
 
-	for _, n in ipairs(names) do
-		list[#list + 1] = {n = n};
+	local grid = scene.grid;
+
+	if grid ~= nil then
+		rec.gx = tostring(grid.offsetX or "");
+		rec.gy = tostring(grid.offsetY or "");
+		rec.cs = tostring(grid.cellSize or "");
 	end;
 
-	scene.userData[LIST_FIELD] = FSC.encodeList(list);
+	return rec;
+end;
+
+-- Aplica o fundo guardado no andar (se ele tiver um)
+function FSLEVELS.applyBackground(scene, rec)
+	if rec == nil or rec.has ~= "1" then
+		return;
+	end;
+
+	pcall(function()
+		scene.bkgImageURL = rec.bg or "";
+
+		if rec.bgc ~= nil and rec.bgc ~= "" then scene.bkgColor = rec.bgc; end;
+
+		local ww, wh = tonumber(rec.ww), tonumber(rec.wh);
+
+		if ww ~= nil and ww > 0 then scene.worldWidth = ww; end;
+		if wh ~= nil and wh > 0 then scene.worldHeight = wh; end;
+
+		local grid = scene.grid;
+		local cs, gx, gy = tonumber(rec.cs), tonumber(rec.gx), tonumber(rec.gy);
+
+		if grid ~= nil then
+			if cs ~= nil and cs > 0 then grid.cellSize = cs; end;
+			if gx ~= nil then grid.offsetX = gx; end;
+			if gy ~= nil then grid.offsetY = gy; end;
+		end;
+	end);
+end;
+
+-- Troca o andar ativo: fundo do andar + visibilidade dos itens e paredes
+function FSLEVELS.activate(scene, idx)
+	local recs = FSLEVELS.records(scene);
+
+	if recs[idx] == nil then return; end;
+
+	scene.userData[ACTIVE_FIELD] = tostring(idx);
+	FSLEVELS.applyBackground(scene, recs[idx]);
+	FSLEVELS.apply(scene);
 end;
 
 function FSLEVELS.active(scene)
@@ -168,11 +229,11 @@ end;
 
 -- Remove o andar idx: itens dele passam a valer para todos; índices acima descem
 function FSLEVELS.delete(scene, idx)
-	local names = FSLEVELS.names(scene);
+	local recs = FSLEVELS.records(scene);
 
-	if names[idx] == nil then return; end;
+	if recs[idx] == nil then return; end;
 
-	table.remove(names, idx);
+	table.remove(recs, idx);
 	local fow = scene.fogOfWar;
 
 	for _, it in ipairs(FSLEVELS.allItems(scene)) do
@@ -198,13 +259,20 @@ function FSLEVELS.delete(scene, idx)
 		end;
 	end;
 
-	saveNames(scene, names);
+	saveRecords(scene, recs);
 	local active = FSLEVELS.active(scene);
 
-	if active > #names then active = math.max(1, #names); end;
+	if active > idx then
+		active = active - 1;
+	elseif active == idx then
+		active = math.max(1, math.min(idx, #recs));
+	end;
 
-	scene.userData[ACTIVE_FIELD] = tostring(active);
-	FSLEVELS.apply(scene);
+	if #recs > 0 then
+		FSLEVELS.activate(scene, active);
+	else
+		scene.userData[ACTIVE_FIELD] = "1";
+	end;
 end;
 
 function FSLEVELS.findLevel(scene, text)
@@ -281,52 +349,67 @@ SceneLib.registerPlugin(function(scene, attachment)
 		end;
 
 		if msg.activate then
-			scene.userData[ACTIVE_FIELD] = tostring(lvl);
+			FSLEVELS.activate(scene, lvl);
+		else
+			FSLEVELS.apply(scene);
 		end;
-
-		FSLEVELS.apply(scene);
 	end));
 
 	local function model()
-		local names = FSLEVELS.names(scene);
-		return {names = names, active = FSLEVELS.active(scene), counts = FSLEVELS.counts(scene)};
+		local recs = FSLEVELS.records(scene);
+		local names, hasBg = {}, {};
+
+		for i, r in ipairs(recs) do
+			names[i] = r.n or "?";
+			hasBg[i] = r.has == "1";
+		end;
+
+		return {names = names, hasBg = hasBg, active = FSLEVELS.active(scene), counts = FSLEVELS.counts(scene)};
 	end;
 
 	local function act(name, idx, text)
+		local recs = FSLEVELS.records(scene);
 		local names = FSLEVELS.names(scene);
 
 		if name == "add" then
 			local n = FSC.trim(text);
 
 			if n == "" then
-				n = (#names == 0) and "Térreo" or ("Andar " .. (#names + 1));
+				n = (#recs == 0) and "Térreo" or ("Andar " .. (#recs + 1));
 			end;
 
-			names[#names + 1] = n;
-			saveNames(scene, names);
+			-- o andar novo começa com o fundo atual (assim, voltar a ele
+			-- sempre restaura este mapa)
+			recs[#recs + 1] = FSLEVELS.captureBackground(scene, {n = n});
+			saveRecords(scene, recs);
 
-			if #names == 1 then
+			if #recs == 1 then
 				scene.userData[ACTIVE_FIELD] = "1";
 			end;
 
 			return;
 		end;
 
-		if idx == nil or names[idx] == nil then
+		if idx == nil or recs[idx] == nil then
 			showMessage("Crie um andar primeiro.");
 			return;
 		end;
 
 		if name == "activate" then
-			scene.userData[ACTIVE_FIELD] = tostring(idx);
-			FSLEVELS.apply(scene);
+			FSLEVELS.activate(scene, idx);
 			viewport:needRepaint();
+		elseif name == "captureBg" then
+			FSLEVELS.captureBackground(scene, recs[idx]);
+			saveRecords(scene, recs);
+		elseif name == "clearBg" then
+			recs[idx].has = "";
+			saveRecords(scene, recs);
 		elseif name == "rename" then
 			local n = FSC.trim(text);
 
 			if n ~= "" then
-				names[idx] = n;
-				saveNames(scene, names);
+				recs[idx].n = n;
+				saveRecords(scene, recs);
 			end;
 		elseif name == "delete" then
 			Dialogs.confirmYesNo("Excluir o andar \"" .. names[idx] .. "\"? Os itens dele passam a aparecer em todos os andares.",
@@ -374,7 +457,7 @@ SceneLib.registerPlugin(function(scene, attachment)
 			end;
 
 			frm:prepareFor({model = model, act = act, close = function() viewport:closeForm(frm); end});
-			FSC.showFormFit(viewport, frm, 320, 330, "topLeft", 220, 180);
+			FSC.showFormFit(viewport, frm, 320, 400, "topLeft", 220, 180);
 		end);
 
 	-- parede de andar: arraste um retângulo; vale só quando o andar está ativo

@@ -302,6 +302,12 @@ Botão **Andares** (mestre): crie os andares (Térreo, Porão...), selecione
 itens no tabuleiro (fundo do mapa, desenhos, tokens) e use **Pôr neste
 andar**. **Ativar este andar** deixa o resto visível só para o mestre. Itens
 sem andar aparecem sempre; o que você escondeu à mão continua escondido.
+**Fundo de cada andar**: cada andar guarda a imagem de fundo do Scene, a cor,
+o tamanho do mundo e o alinhamento do grid. Para montar: crie o andar (ele
+copia o fundo atual), troque o mapa nas opções do tabuleiro como de costume,
+ajuste o grid e clique **Usar o fundo atual neste andar**. Ao ativar um andar, o
+fundo dele volta sozinho. **Não trocar** faz o andar manter o fundo que
+estiver na tela (útil quando o andar é só uma camada sobre o mesmo mapa).
 **Paredes do andar**: arraste retângulos que só bloqueiam a visão quando o
 andar deles está ativo. Escadas: gatilho com a ação "Levar token para um
 andar" (com "sim" no segundo campo para também trocar o andar ativo).
