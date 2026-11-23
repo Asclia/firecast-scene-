@@ -241,6 +241,7 @@ def run(one_based):
         "SceneSuite_SpellFX": ["fsCommon.lua", "spellfx.lua"],
         "SceneSuite_HP": ["fsCommon.lua", "hp.lua"],
         "SceneSuite_Combat": ["fsCommon.lua", "combat.lua"],
+        "SceneSuite_Light": ["fsCommon.lua", "light.lua"],
     }
     L.execute("require = function() end")
     for pname, files in order.items():

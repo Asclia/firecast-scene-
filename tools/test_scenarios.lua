@@ -508,3 +508,35 @@ do
 	panel:doClose()
 	print("Tracker de combate OK")
 end
+
+------------------------------------------------------------------ Luz e visão
+do
+	FSLIGHT.openFor(scene, {medium})
+	local f = MOCK.forms.frmFSLight
+	f.cmbLight.value = "torch"; f.cmbVision.value = "dark60"; f:changed()
+	assert(f.labHint.text:find("20 ft normal"), f.labHint.text)
+	f:doApply()
+	-- 20 ft = 4 quadrados = 6 m (célula de 1,5 m)
+	assert(math.abs(medium.lightIntenseRange - 6) < 1e-6 and math.abs(medium.lightWeakRange - 12) < 1e-6, "tocha em métrica de mundo")
+	assert(math.abs(medium.visionDarknessRange - 18) < 1e-6 and medium.visionHaveVision == true, "visão no escuro 60 ft")
+	FSLIGHT.openFor(scene, {medium})
+	f.cmbLight.value = "custom"; f.edtBright.text = "3 m"; f.edtDim.text = "6 m"; f.cmbAngle.value = "90"
+	f.cmbVision.value = "keep"; f:doApply()
+	assert(math.abs(medium.lightIntenseRange - 3) < 1e-6 and medium.lightAngle == 90, "luz personalizada em metros")
+	FSLIGHT.openFor(scene, {medium})
+	f.cmbLight.value = "custom"; f.edtBright.text = "abc"; f:changed()
+	assert(f.labHint.text:find("inválida"), "erro de valor")
+	-- botão rápido: apaga, depois reacende com a mesma luz
+	medium.selected = true
+	tool("Luz: acender").cb()
+	assert(medium.lightWeakRange == 0, "apagou")
+	tool("Luz: acender").cb()
+	assert(math.abs(medium.lightWeakRange - 6) < 1e-6 and medium.lightAngle == 90, "reacendeu com a última luz")
+	medium.selected = false
+	-- token sem memória acende uma tocha
+	large.lightWeakRange = 0; large.lightIntenseRange = 0
+	FSLIGHT.toggle(scene, large)
+	assert(math.abs(large.lightWeakRange - 12) < 1e-6, "tocha padrão")
+	local t = tool("Luz e visão: clique"); t.cb(); click(medium.x + 0.1, medium.y + 0.1); t.deact()
+	print("Luz e visão OK")
+end

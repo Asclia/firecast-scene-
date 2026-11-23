@@ -89,6 +89,12 @@ PLUGINS = {
             "tool_end": "delapouite/broom",
         },
     },
+    "SceneSuite_Light": {
+        "tools": {
+            "tool_light": "lorc/sun",
+            "tool_torch": "delapouite/torch",
+        },
+    },
     "SceneSuite_SpellFX": {
         "tools": {
             "tool_fx": "lorc/fireball",

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<popupForm name="frmFSLight" width="340" height="360" drawContainer="true" resizable="true"
+           placement="center" cancelable="true">
+
+	<style>
+		label.cap {
+			width: 96;
+			height: 26;
+			horzTextAlign: trailing;
+			vertTextAlign: center;
+			wordWrap: false;
+			fontSize: 12;
+		}
+	</style>
+
+	<script><![CDATA[
+		local options = {};
+		local loading = false;
+
+		function self:closeMe()
+			if options.close ~= nil then options.close(); else self:close(); end;
+		end;
+
+		-- info = {title, lightItems, lightValues, visionItems, visionValues, record, describe(rec), onApply(rec), close}
+		function self:prepareFor(info)
+			options = info or {};
+			loading = true;
+			self.labTitle.text = options.title or "Luz e visão";
+			self.cmbLight.items = options.lightItems or {};
+			self.cmbLight.values = options.lightValues or {};
+			self.cmbVision.items = options.visionItems or {};
+			self.cmbVision.values = options.visionValues or {};
+			local r = options.record or {};
+			self.cmbLight.value = r.light or "keep";
+			self.cmbVision.value = r.vision or "keep";
+			self.edtBright.text = r.bright or "20 ft";
+			self.edtDim.text = r.dim or "40 ft";
+			self.cmbAngle.value = r.angle or "360";
+			self.edtDark.text = r.dark or "60 ft";
+			loading = false;
+			self:changed();
+		end;
+
+		function self:readRecord()
+			return {
+				light = self.cmbLight.value or "keep",
+				vision = self.cmbVision.value or "keep",
+				bright = self.edtBright.text or "",
+				dim = self.edtDim.text or "",
+				angle = self.cmbAngle.value or "360",
+				dark = self.edtDark.text or ""
+			};
+		end;
+
+		function self:changed()
+			if loading then return; end;
+			local customLight = self.cmbLight.value == "custom";
+			self.edtBright.enabled = customLight;
+			self.edtDim.enabled = customLight;
+			self.cmbAngle.enabled = customLight;
+			self.edtDark.enabled = self.cmbVision.value == "custom";
+
+			if options.describe ~= nil then
+				self.labHint.text = options.describe(self:readRecord());
+			end;
+		end;
+
+		function self:doApply()
+			if options.onApply ~= nil then
+				options.onApply(self:readRecord());
+			end;
+
+			self:closeMe();
+		end;
+	]]></script>
+
+	<scrollBox align="client">
+	<layout left="8" top="6" width="324" height="344">
+		<label name="labTitle" left="0" top="0" width="324" height="24" fontSize="15" fontStyle="bold" wordWrap="false"/>
+
+		<label class="cap" left="0" top="32" text="Luz:"/>
+		<comboBox name="cmbLight" left="100" top="32" width="224" height="26" onChange="self:changed()"/>
+
+		<label class="cap" left="0" top="64" text="Luz normal:"/>
+		<edit name="edtBright" left="100" top="64" width="80" height="26" onChange="self:changed()"/>
+		<label class="cap" left="180" top="64" width="64" text="Penumbra:"/>
+		<edit name="edtDim" left="248" top="64" width="76" height="26" onChange="self:changed()"/>
+
+		<label class="cap" left="0" top="96" text="Ângulo:"/>
+		<comboBox name="cmbAngle" left="100" top="96" width="224" height="26"
+		          items="{'Todas as direções', 'Cone de 90° (para a frente)', 'Cone de 60°'}"
+		          values="{'360', '90', '60'}" value="360" onChange="self:changed()"/>
+
+		<horzLine left="0" top="132" width="324" strokeColor="#FFFFFF30"/>
+
+		<label class="cap" left="0" top="142" text="Visão:"/>
+		<comboBox name="cmbVision" left="100" top="142" width="224" height="26" onChange="self:changed()"/>
+
+		<label class="cap" left="0" top="174" text="No escuro:"/>
+		<edit name="edtDark" left="100" top="174" width="80" height="26" onChange="self:changed()"/>
+
+		<label name="labHint" left="0" top="208" width="324" height="90" fontSize="11" fontColor="#FFCC66"
+		       wordWrap="true" horzTextAlign="center"/>
+
+		<button left="114" top="306" width="100" height="30" text="Cancelar" onClick="self:closeMe()"/>
+		<button left="224" top="306" width="100" height="30" text="Aplicar" fontStyle="bold" onClick="self:doApply()"/>
+	</layout>
+	</scrollBox>
+</popupForm>
